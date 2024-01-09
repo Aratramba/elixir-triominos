@@ -166,7 +166,7 @@ defmodule TriominosWeb.GameLive do
   def render(assigns) do
     ~H"""
     <div class="grid grid-cols-5 h-screen overflow-hidden relative">
-      <div id="dragger" class="absolute inset-0 z-50 pointer-events-none"></div>
+      <div id="dragger" class="absolute inset-0 z-50"></div>
 
       <%!-- topbar --%>
       <div class="absolute inset-x-0 top-0 h-16 border z-40 bg-darkgray">
@@ -183,7 +183,7 @@ defmodule TriominosWeb.GameLive do
         <div class="flex gap-4 no-wrap overflow-scroll" id="hand" phx-hook="Hand">
           <%= for piece <- @hand do %>
             <% [a, b, c, d, e, f] = piece.value %>
-            <div phx-click="rotate" phx-value-piece={piece.id} id={piece.id} class="piece select-none">
+            <div phx-value-piece={piece.id} id={piece.id} class="draggable-piece select-none">
               <div class="piece-shape">
                 <svg viewBox="0 0 100 86.6" class="absolute inset-0 fill-white">
                   <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" />
@@ -195,8 +195,12 @@ defmodule TriominosWeb.GameLive do
                 </svg>
                 <span :if={a > -1} class="absolute -translate-x-1/2 left-1/2 top-0"><%= a %></span>
                 <span :if={b > -1} class="absolute -translate-x-full right-0 top-0"><%= b %></span>
-                <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-0"><%= c %></span>
-                <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-0"><%= d %></span>
+                <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-0">
+                  <%= c %>
+                </span>
+                <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-0">
+                  <%= d %>
+                </span>
                 <span :if={e > -1} class="absolute translate-x-full left-0 bottom-0"><%= e %></span>
                 <span :if={f > -1} class="absolute translate-x-full left-0 top-0"><%= f %></span>
               </div>
@@ -214,20 +218,21 @@ defmodule TriominosWeb.GameLive do
               class="piece absolute left-0 top-0"
               style={"transform: translateX(#{piece.x * 50}px) translateY(#{piece.y * 68.6}px)"}
             >
-              <div phx-value-piece={piece.id} phx-click="rotate" class="piece-shape select-none">
+              <div phx-value-piece={piece.id} class="piece-shape select-none">
                 <svg viewBox="0 0 100 86.6" class="absolute inset-0">
                   <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" style="fill:white" />
                   <polygon :if={a == -1} points="0 0 100 0 50 86.6" style="fill:white" />
                 </svg>
                 <span :if={a > -1} class="absolute -translate-x-1/2 left-1/2 top-0"><%= a %></span>
                 <span :if={b > -1} class="absolute -translate-x-full right-0 top-0"><%= b %></span>
-                <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-0"><%= c %></span>
-                <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-0"><%= d %></span>
+                <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-0">
+                  <%= c %>
+                </span>
+                <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-0">
+                  <%= d %>
+                </span>
                 <span :if={e > -1} class="absolute translate-x-full left-0 bottom-0"><%= e %></span>
                 <span :if={f > -1} class="absolute translate-x-full left-0 top-0"><%= f %></span>
-
-                <%!-- <span><%= piece.x %></span>
-                <span><%= piece.y %></span> --%>
               </div>
             </div>
           <% end %>
