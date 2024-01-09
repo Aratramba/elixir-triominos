@@ -35,32 +35,57 @@ Hooks.Board = {
 }
 
 Hooks.Hand = {
+
+    /**
+     * How about: 
+     * on drag start we send a message to the server that makes it the current dragging item
+     * from then on we can rotate?
+     */
+
+
     drag(elements) {
         const Hook = this;
         console.log('init drag')
 
         let activePiece = null;
-        let offsetX, offsetY;
 
         const dragger = document.getElementById('dragger')
 
-        dragger.addEventListener('pointermove', onDrag.bind(this), false);
-        dragger.addEventListener('pointerup', onDragEnd.bind(this), false);
+        dragger.addEventListener('pointerdown', onDragStart.bind(this), false);
         addEventListener('keyup', onKeyUp.bind(this), false)
-
 
         function onDragStart(e) {
             e.preventDefault();
-            const piece = e.target.closest('.piece')
-            dragger.classList.remove('pointer-events-none');
 
-            const clone = piece.cloneNode(true);
-            clone.removeAttribute('id')
-            dragger.appendChild(clone);
+            const clickedElements = document.elementsFromPoint(e.clientX, e.clientY);
+            const piece = clickedElements.find(element => element.classList.contains('draggable-piece'))
 
-            const rect = piece.getBoundingClientRect();
-            const x = e.clientX - e.offsetX;
-            const y = e.clientY - e.offsetY;
+            if (!piece) return;
+            let boundOnPieceDragStart = onPieceDragStart.bind(this, e, piece)
+            boundOnPieceDragStart();
+
+        }
+
+        /**
+         * Piece drag logic
+         */
+
+        function onPieceDragStart(e, piece) {
+
+            dragger.addEventListener('pointermove', onPieceDrag.bind(this), false);
+            dragger.addEventListener('pointerup', onPieceDragEnd.bind(this), false);
+
+            dragger.classList.remove('pointers-events-none');
+
+            // const clone = document.createElement('div');
+            // clone.innerHTML = piece.innerHTML
+            // clone.id = piece.id;
+            const clone = piece;
+
+            dragger.appendChild(piece);
+
+            const x = e.clientX - 50;
+            const y = e.clientY - 43;
 
             this.offsetX = e.offsetX;
             this.offsetY = e.offsetY;
@@ -69,40 +94,47 @@ Hooks.Hand = {
             this.activePiece.style.transform = `translateX(${x}px) translateY(${y}px) translateZ(0)`
         }
 
-        function onDrag(e) {
+        function onPieceDrag(e) {
             if (!this.activePiece) return;
             e.preventDefault();
-            const x = e.clientX - this.offsetX;
-            const y = e.clientY - this.offsetY;
+            const x = e.clientX - 50;
+            const y = e.clientY - 43;
             this.activePiece.style.transform = `translateX(${x}px) translateY(${y}px) translateZ(0)`
         }
 
-        function onDragEnd(e) {
+        function onPieceDragEnd(e) {
+            if (!this.activePiece) return;
+
             e.preventDefault();
             const dragger = document.getElementById('dragger')
             dragger.removeChild(this.activePiece)
 
-            const id = this.activePiece.getAttribute('phx-value-piece')
+            const id = this.activePiece.id
+            console.log(this.activePiece)
             Hook.pushEvent('place', { piece: id })
 
             this.activePiece = null;
             this.offsetX = null;
             this.offsetY = null;
             dragger.classList.add('pointer-events-none');
-            dragger.removeEventListener('pointermove', onDrag, false);
-            dragger.removeEventListener('pointerup', onDragEnd, false);
+            dragger.removeEventListener('pointermove', onPieceDrag, false);
+            dragger.removeEventListener('pointerup', onPieceDragEnd, false);
 
         }
-
-        elements.forEach(element => {
-            element.addEventListener('pointerdown', onDragStart.bind(this), false);
-        })
 
         function onKeyUp(e) {
             // space
             if (e.keyCode === 32) {
-                const id = this.activePiece.getAttribute('phx-value-piece')
+                const id = this.activePiece.id
                 Hook.pushEvent('rotate', { piece: id })
+
+                // const pieceShape = this.activePiece.firstElementChild;
+                // const rotate = getComputedStyle(pieceShape).getPropertyValue('--rotate') || 0;
+                // this.activePiece.firstElementChild.style.rotate = 'var(--rotate)deg'
+                // const originalItem = document.querySelector(`[phx-value-piece="${id}"]`)
+                // console.log(originalItem)
+                // const rotation = +this.activePiece.getAttribute('data-rotation');
+                // this.activePiece.setAttribute('data-rotation', rotation + )
             }
         }
 
@@ -111,10 +143,13 @@ Hooks.Hand = {
         const pieces = this.el.querySelectorAll('.piece')
         this.drag(pieces)
     },
-    updated(e) {
-        const pieces = this.el.querySelectorAll('.piece')
-        console.log('updated', e)
-    }
+    // updated(e) {
+    //     console.log('updated', e)
+    // },
+    // handleEvent(e, payload) {
+    //     console.log('handle event')
+    //     console.log(e, payload)
+    // }
 }
 
 
