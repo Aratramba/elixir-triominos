@@ -3,7 +3,7 @@
 @import "tailwindcss/utilities";
 
 /* This file is for your main application CSS */
-.piece {
+.piece-shape {
     height: 86.6px;
     width: 100px;
     display: block;
@@ -11,7 +11,6 @@
 }
 
 #board {
-    background: whitesmoke;
     width: 2000px;
     height: 2000px;
     position: relative;

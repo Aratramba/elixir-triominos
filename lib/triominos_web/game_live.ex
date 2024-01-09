@@ -165,49 +165,59 @@ defmodule TriominosWeb.GameLive do
 
   def render(assigns) do
     ~H"""
-    <div class="grid grid-cols-5 h-screen overflow-hidden">
-      <div class="w-96 h-screen p-10 grid">
-        <%= for piece <- @hand do %>
-          <% [a, b, c, d, e, f] = piece.value %>
-          <button
-            phx-click="rotate"
-            phx-value-piece={piece.id}
-            id={piece.id}
-            class="piece select-none"
-            draggable="true"
-            ondragstart="drag_piece(event)"
-          >
-            <svg viewBox="0 0 100 86.6" class="absolute inset-0">
-              <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" style="fill:red" />
-              <polygon :if={a == -1} points="0 0 100 0 50 86.6" style="fill:red" />
-            </svg>
-            <svg viewBox="0 0 100 86.6" class="absolute inset-0">
-              <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" style="fill:red" />
-              <polygon :if={a == -1} points="0 0 100 0 50 86.6" style="fill:red" />
-            </svg>
-            <span :if={a > -1} class="absolute -translate-x-1/2 left-1/2 top-0"><%= a %></span>
-            <span :if={b > -1} class="absolute -translate-x-full right-0 top-0"><%= b %></span>
-            <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-0"><%= c %></span>
-            <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-0"><%= d %></span>
-            <span :if={e > -1} class="absolute translate-x-full left-0 bottom-0"><%= e %></span>
-            <span :if={f > -1} class="absolute translate-x-full left-0 top-0"><%= f %></span>
-          </button>
-        <% end %>
+    <div class="grid grid-cols-5 h-screen overflow-hidden relative">
+      <div id="dragger" class="absolute inset-0 z-50 pointer-events-none"></div>
+
+      <%!-- topbar --%>
+      <div class="absolute inset-x-0 top-0 h-16 border z-40 bg-darkgray">
+        topbar
       </div>
 
-      <div class="col-span-4 overflow-scroll">
-        <%!-- function(e) { JS.push("drop", e.dataTransfer.getData("text")} --%>
+      <%!-- pool --%>
+      <div class="absolute w-[50vh] h-[50vh] top-0 right-0 hover:h-[75vh] hover:w-[75vh] transition-all border rounded-full translate-x-1/2 -translate-y-1/2 flex items-end z-20">
+        pool
+      </div>
+
+      <%!-- hand --%>
+      <div class="absolute inset-x-0 bottom-0 h-24 z-30 bg-darkblue">
+        <div class="flex gap-4 no-wrap overflow-scroll" id="hand" phx-hook="Hand">
+          <%= for piece <- @hand do %>
+            <% [a, b, c, d, e, f] = piece.value %>
+            <div phx-click="rotate" phx-value-piece={piece.id} id={piece.id} class="piece select-none">
+              <div class="piece-shape">
+                <svg viewBox="0 0 100 86.6" class="absolute inset-0 fill-white">
+                  <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" />
+                  <polygon :if={a == -1} points="0 0 100 0 50 86.6" />
+                </svg>
+                <svg viewBox="0 0 100 86.6" class="absolute inset-0 fill-white">
+                  <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" />
+                  <polygon :if={a == -1} points="0 0 100 0 50 86.6" />
+                </svg>
+                <span :if={a > -1} class="absolute -translate-x-1/2 left-1/2 top-0"><%= a %></span>
+                <span :if={b > -1} class="absolute -translate-x-full right-0 top-0"><%= b %></span>
+                <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-0"><%= c %></span>
+                <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-0"><%= d %></span>
+                <span :if={e > -1} class="absolute translate-x-full left-0 bottom-0"><%= e %></span>
+                <span :if={f > -1} class="absolute translate-x-full left-0 top-0"><%= f %></span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%!-- board --%>
+      <div class="absolute inset-0 z-10 bg-blue overflow-hidden">
         <div id="board" phx-hook="Board">
           <%= for piece <- @board do %>
             <% [a, b, c, d, e, f] = piece.value %>
             <div
-              class="absolute left-0 top-0"
+              class="piece absolute left-0 top-0"
               style={"transform: translateX(#{piece.x * 50}px) translateY(#{piece.y * 68.6}px)"}
             >
-              <span phx-value-piece={piece.id} phx-click="rotate" class="piece select-none">
+              <div phx-value-piece={piece.id} phx-click="rotate" class="piece-shape select-none">
                 <svg viewBox="0 0 100 86.6" class="absolute inset-0">
-                  <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" style="fill:red" />
-                  <polygon :if={a == -1} points="0 0 100 0 50 86.6" style="fill:red" />
+                  <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" style="fill:white" />
+                  <polygon :if={a == -1} points="0 0 100 0 50 86.6" style="fill:white" />
                 </svg>
                 <span :if={a > -1} class="absolute -translate-x-1/2 left-1/2 top-0"><%= a %></span>
                 <span :if={b > -1} class="absolute -translate-x-full right-0 top-0"><%= b %></span>
@@ -216,9 +226,9 @@ defmodule TriominosWeb.GameLive do
                 <span :if={e > -1} class="absolute translate-x-full left-0 bottom-0"><%= e %></span>
                 <span :if={f > -1} class="absolute translate-x-full left-0 top-0"><%= f %></span>
 
-                <span><%= piece.x %></span>
-                <span><%= piece.y %></span>
-              </span>
+                <%!-- <span><%= piece.x %></span>
+                <span><%= piece.y %></span> --%>
+              </div>
             </div>
           <% end %>
         </div>
