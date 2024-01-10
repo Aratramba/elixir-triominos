@@ -316,7 +316,29 @@ defmodule TriominosWeb.GameLive do
     {:noreply, assign(socket, dragging: piece)}
   end
 
-  def handle_event("drag_end", %{"piece" => _id}, socket) do
-    {:noreply, assign(socket, dragging: nil)}
+  def handle_event("drag_end", %{"piece" => id}, socket) do
+    # validation logic goes here
+
+    piece = Enum.find(@pieces, fn x -> x.id == id end)
+    IO.puts("validate here")
+    IO.inspect(piece)
+    IO.inspect(id)
+
+    # remove piece from hand
+    hand = Enum.reject(socket.assigns.hand, fn x -> x.id == id end)
+
+    # determine location later from frontend
+    piece = Piece.set_x(piece, 21)
+    piece = Piece.set_y(piece, 20)
+
+    # add piece to board
+    board = socket.assigns.board ++ [piece]
+
+    # add new piece to pieces
+    hand = hand ++ Enum.take_random(socket.assigns.pool, 1)
+
+    # remove piece from pool
+    pool = Enum.reject(socket.assigns.pool, fn x -> x in hand end)
+    {:noreply, assign(socket, hand: hand, pool: pool, board: board, dragging: nil)}
   end
 end
