@@ -26,9 +26,10 @@ let Hooks = {}
 
 const dragger = document.getElementById('dragger')
 dragger.addEventListener('pointermove', onMouseMove.bind(this), false);
+
 let x;
 let y;
-let boardX = -500
+let boardX = -520
 let boardY = -1000
 
 const PIECE_HEIGHT = 86.6;
@@ -36,6 +37,10 @@ const PIECE_WIDTH = 100;
 
 document.body.style.setProperty('--piece-height', `${PIECE_HEIGHT}px`);
 document.body.style.setProperty('--piece-width', `${PIECE_WIDTH}px`);
+
+function roundTo(n, to) {
+  return Math.round(Math.round(n / to) * to)
+}
 
 function onMouseMove(e) {
   x = e.clientX;
@@ -99,11 +104,18 @@ Hooks.Board = {
 
 Hooks.Dragging = {
   id: null,
+  ghost: null,
+  ghostX: null,
+  ghostY: null,
   move() {
-    this.el.style.transform = `translateX(${x - (PIECE_WIDTH / 2)}px) translateY(${y - (PIECE_HEIGHT / 2)}px) translateZ(0)`
+    this.el.style.transform = `
+      translateX(${x - (PIECE_WIDTH / 2)}px) 
+      translateY(${y - (PIECE_HEIGHT / 2)}px) 
+      translateZ(0)`
   },
   mounted() {
     this.id = this.el.firstElementChild.getAttribute('data-id')
+    this.ghost = document.querySelector('#ghost')
 
     onKeyUp = _onKeyUp.bind(this)
     addEventListener('keyup', onKeyUp)
@@ -112,24 +124,34 @@ Hooks.Dragging = {
     onPieceDragEnd = _onPieceDragEnd.bind(this)
     dragger.addEventListener('pointermove', onPieceDrag);
     dragger.addEventListener('pointerup', onPieceDragEnd);
-    this.el.style.transform = `translateX(${x - 50}px) translateY(${y - 43}px) translateZ(0)`
+
+    this.el.style.transform = this.ghost.style.transform = `
+      translateX(${x - 50}px) 
+      translateY(${y - 43}px) 
+      translateZ(0)`
 
     function _onPieceDrag(e) {
       e.preventDefault();
       this.move();
 
-      const x = Math.abs(Math.ceil((boardX - e.clientX + (PIECE_WIDTH / 2)) / (PIECE_WIDTH / 2)))
-      const y = Math.abs(Math.ceil((boardY - e.clientY + (PIECE_HEIGHT / 2)) / PIECE_HEIGHT))
-      console.log(x, y)
+      this.ghostX = roundTo(x, PIECE_WIDTH / 2) - roundTo(boardX, PIECE_WIDTH / 2) - (PIECE_WIDTH / 2)
+      this.ghostY = roundTo(y, PIECE_HEIGHT) - roundTo(boardY, PIECE_HEIGHT) - PIECE_HEIGHT
+
+      console.log(boardX, boardY)
+
+      this.ghost.style.transform = `
+        translateX(${this.ghostX}px) 
+        translateY(${this.ghostY}px) 
+        translateZ(0)`
     }
 
     function _onPieceDragEnd(e) {
       e.preventDefault();
 
-      const x = Math.abs(Math.ceil((boardX - e.clientX + (PIECE_WIDTH / 2)) / (PIECE_WIDTH / 2)))
-      const y = Math.abs(Math.ceil((boardY - e.clientY + (PIECE_HEIGHT / 2)) / PIECE_HEIGHT))
-      console.log(x, y)
-      this.pushEvent('drag_end', { x, y })
+      const col = Math.round(this.ghostX / (PIECE_WIDTH / 2))
+      const row = Math.round(this.ghostY / PIECE_HEIGHT)
+
+      this.pushEvent('drag_end', { x: col, y: row })
       removeEventListener('keyup', onKeyUp)
       dragger.removeEventListener('pointermove', onPieceDrag);
       dragger.removeEventListener('pointerup', onPieceDragEnd);
