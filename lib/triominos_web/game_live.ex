@@ -131,15 +131,15 @@ defmodule TriominosWeb.GameLive do
     hand = Enum.take_random(@pieces, 5)
 
     # remove pieces from pool
-    pool = Enum.reject(@pieces, fn x -> x in hand end)
+    pool = Enum.reject(@pieces, fn p -> p in hand end)
 
     # add first piece to board
 
     # this seems wrong, should be taking pipe |> operations, how does that work?
     board = Enum.take_random(pool, 1)
     first_piece = Enum.at(board, 0)
-    first_piece = Piece.set_x(first_piece, 20)
-    first_piece = Piece.set_y(first_piece, 20)
+    first_piece = Piece.set_x(first_piece, 25)
+    first_piece = Piece.set_y(first_piece, 17)
     board = [first_piece]
     IO.inspect(board)
 
@@ -200,7 +200,9 @@ defmodule TriominosWeb.GameLive do
           <%= for piece <- @board do %>
             <div
               class="piece absolute left-0 top-0"
-              style={"transform: translateX(#{piece.x * 50}px) translateY(#{piece.y * 68.6}px)"}
+              style={"transform:
+                translateX(calc(#{piece.x}*var(--piece-width)/2))
+                translateY(calc(#{piece.y}*var(--piece-height)))"}
             >
               <TriominosWeb.GameLive.shape value={piece.value} id={piece.id} draggable={false} />
             </div>
@@ -239,39 +241,51 @@ defmodule TriominosWeb.GameLive do
 
   def handle_event("refill", _, socket) do
     hand = socket.assigns.hand ++ Enum.take_random(socket.assigns.pool, 1)
-    pool = Enum.reject(socket.assigns.pool, fn x -> x in hand end)
+    pool = Enum.reject(socket.assigns.pool, fn p -> p in hand end)
     {:noreply, assign(socket, hand: hand, pool: pool)}
   end
 
   def handle_event("rotate", %{"piece" => _id}, socket) do
     dragging = Piece.rotate(socket.assigns.dragging)
-    # rotate the one in hand too?
     {:noreply, assign(socket, dragging: dragging)}
   end
 
   def handle_event("drag_start", %{"piece" => id}, socket) do
-    piece = Enum.find(@pieces, fn x -> x.id == id end)
+    piece = Enum.find(@pieces, fn p -> p.id == id end)
     {:noreply, assign(socket, dragging: piece)}
   end
 
-  def handle_event("drag_end", %{"piece" => id}, socket) do
-    piece = socket.assigns.dragging
+  def handle_event("drag_end", %{"x" => x, "y" => y}, socket) do
+    IO.puts(to_string(x) <> " " <> to_string(y))
 
-    # remove piece from hand
-    hand = Enum.reject(socket.assigns.hand, fn x -> x.id == id end)
+    # check if piece on top of another
+    on_top = Enum.find(socket.assigns.board, fn p -> p.x == x and p.y == y end)
 
-    # determine location later from frontend
-    piece = Piece.set_x(piece, 21)
-    piece = Piece.set_y(piece, 20)
+    if on_top != nil do
+      IO.puts("rejected: on top of another piece")
+    end
 
-    # add piece to board
-    board = socket.assigns.board ++ [piece]
+    if !on_top do
+      piece = socket.assigns.dragging
 
-    # add new piece to pieces
-    hand = Enum.take_random(socket.assigns.pool, 1) ++ hand
+      # remove piece from hand
+      hand = Enum.reject(socket.assigns.hand, fn p -> p.id == piece.id end)
 
-    # remove piece from pool
-    pool = Enum.reject(socket.assigns.pool, fn x -> x in hand end)
-    {:noreply, assign(socket, hand: hand, pool: pool, board: board, dragging: nil)}
+      # determine location later from frontend
+      piece = Piece.set_x(piece, x)
+      piece = Piece.set_y(piece, y)
+
+      # add piece to board
+      board = socket.assigns.board ++ [piece]
+
+      # add new piece to pieces
+      hand = Enum.take_random(socket.assigns.pool, 1) ++ hand
+
+      # remove piece from pool
+      pool = Enum.reject(socket.assigns.pool, fn p -> p in hand end)
+      {:noreply, assign(socket, hand: hand, pool: pool, board: board, dragging: nil)}
+    else
+      {:noreply, assign(socket, dragging: nil)}
+    end
   end
 end
