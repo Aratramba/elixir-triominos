@@ -187,7 +187,7 @@ defmodule TriominosWeb.GameLive do
       </div>
 
       <%!-- pool --%>
-      <div class="absolute w-[50vh] h-[50vh] top-0 right-0 hover:h-[75vh] hover:w-[75vh] transition-all border rounded-full translate-x-1/2 -translate-y-1/2 flex items-end z-20">
+      <div class="absolute w-[50vh] h-[50vh] top-0 right-0 hover:h-[75vh] hover:w-[75vh] transition-all border rounded-full translate-x-1/2 -translate-y-1/2 flex items-end overflow-scroll z-50">
         <%= for piece <- @pool do %>
           <% randomX = Enum.random(0..75)
           randomY = Enum.random(0..75)
@@ -196,6 +196,7 @@ defmodule TriominosWeb.GameLive do
           <div
             class="piece absolute"
             style={"transform: rotate(#{randomR}deg); top: #{randomY}%; left: #{randomX}%"}
+            phx-click="refill"
           >
             <TriominosWeb.GameLive.shape value={piece.value} id={piece.id} draggable={false} />
           </div>
@@ -204,7 +205,7 @@ defmodule TriominosWeb.GameLive do
 
       <%!-- hand --%>
       <div class="absolute inset-x-0 bottom-0 h-24 z-30 bg-darkblue">
-        <div class="flex gap-4 no-wrap overflow-scroll" id="hand" phx-hook="Hand">
+        <div class="flex gap-4 flex-nowrap overflow-scroll" id="hand" phx-hook="Hand">
           <%= for piece <- @hand do %>
             <TriominosWeb.GameLive.shape value={piece.value} id={piece.id} draggable={true} />
           <% end %>
@@ -213,7 +214,7 @@ defmodule TriominosWeb.GameLive do
 
       <%!-- board --%>
       <div class="absolute inset-0 z-10 bg-blue overflow-hidden">
-        <div id="board" phx-hook="Board">
+        <div id="board" phx-hook="Board" class="w-[2000px] h-[2000px]">
           <%= for piece <- @board do %>
             <div
               class="piece absolute left-0 top-0"
@@ -231,7 +232,11 @@ defmodule TriominosWeb.GameLive do
   def shape(assigns) do
     ~H"""
     <% [a, b, c, d, e, f] = @value %>
-    <div class="piece-shape select-none" data-draggable={@draggable == true} data-id={@id}>
+    <div
+      class="select-none shrink-0 block relative w-[100px] h-[86.6px]"
+      data-draggable={@draggable == true}
+      data-id={@id}
+    >
       <svg viewBox="0 0 100 86.6" class="absolute inset-0">
         <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" style="fill:white" class="drop-shadow" />
         <polygon :if={a == -1} points="0 0 100 0 50 86.6" style="fill:white" class="drop-shadow" />
@@ -293,6 +298,12 @@ defmodule TriominosWeb.GameLive do
     # remove piece from pool
     pool = Enum.reject(socket.assigns.pool, fn x -> x in hand end)
     {:noreply, assign(socket, hand: hand, pool: pool, board: board, dragging: nil)}
+  end
+
+  def handle_event("refill", _, socket) do
+    hand = socket.assigns.hand ++ Enum.take_random(socket.assigns.pool, 1)
+    pool = Enum.reject(socket.assigns.pool, fn x -> x in hand end)
+    {:noreply, assign(socket, hand: hand, pool: pool)}
   end
 
   def handle_event("rotate", %{"piece" => _id}, socket) do

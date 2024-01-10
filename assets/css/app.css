@@ -3,15 +3,3 @@
 @import "tailwindcss/utilities";
 
 /* This file is for your main application CSS */
-.piece-shape {
-    height: 86.6px;
-    width: 100px;
-    display: block;
-    position: relative;
-}
-
-#board {
-    width: 2000px;
-    height: 2000px;
-    position: relative;
-}
