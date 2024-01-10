@@ -26,6 +26,8 @@ defmodule TriominosWeb.Piece do
   pointing down
   [ F  x  B ]
   [ x  D  x ]
+
+  TODO: perhaps shorten the notion to abcr notation
   """
 
   def new(id) do
@@ -322,9 +324,6 @@ defmodule TriominosWeb.GameLive do
   end
 
   def validate_move("top", piece, neighbour) do
-    IO.inspect(piece.value)
-    IO.inspect(neighbour.value)
-
     [a, b, _c, _d, _e, f] = piece.value
     [a2, b2, c2, d2, e2, _f2] = neighbour.value
 
@@ -343,9 +342,6 @@ defmodule TriominosWeb.GameLive do
   end
 
   def validate_move("bottom", piece, neighbour) do
-    IO.inspect(piece.value)
-    IO.inspect(neighbour.value)
-
     [a, b, c, _d, e, _f] = piece.value
     [a2, b2, _c2, _d2, _e2, f2] = neighbour.value
 
@@ -364,9 +360,6 @@ defmodule TriominosWeb.GameLive do
   end
 
   def validate_move("left", piece, neighbour) do
-    IO.inspect(piece.value)
-    IO.inspect(neighbour.value)
-
     [a, b, _c, d, e, f] = piece.value
     [a2, b2, c2, d2, _e2, _f2] = neighbour.value
 
@@ -386,9 +379,6 @@ defmodule TriominosWeb.GameLive do
   end
 
   def validate_move("right", piece, neighbour) do
-    IO.inspect(piece.value)
-    IO.inspect(neighbour.value)
-
     [a, b, c, d, _e, _f] = piece.value
     [a2, b2, _c2, d2, e2, f2] = neighbour.value
 
