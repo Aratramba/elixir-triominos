@@ -196,7 +196,7 @@ defmodule TriominosWeb.GameLive do
 
       <%!-- board --%>
       <div class="absolute inset-0 z-10 bg-blue overflow-hidden">
-        <div id="board" phx-hook="Board" class="w-[2000px] h-[2000px]">
+        <div id="board" phx-hook="Board" class="w-[2000px] h-[2000px] transform-gpu">
           <%= for piece <- @board do %>
             <div
               class="piece absolute left-0 top-0"
@@ -221,21 +221,42 @@ defmodule TriominosWeb.GameLive do
       data-draggable={@draggable == true}
       data-id={@id}
     >
-      <svg viewBox="0 0 100 86.6" class="absolute inset-0">
+      <%!-- <svg viewBox="0 0 100 86.6" class="absolute inset-0">
         <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" style="fill:white" class="drop-shadow" />
         <polygon :if={a == -1} points="0 0 100 0 50 86.6" style="fill:white" class="drop-shadow" />
-      </svg>
-      <span :if={a > -1} class="absolute -translate-x-1/2 left-1/2 top-0"><%= a %></span>
-      <span :if={b > -1} class="absolute -translate-x-full right-0 top-0"><%= b %></span>
-      <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-0">
-        <%= c %>
+      </svg> --%>
+      <img
+        src="/images/tile2.png"
+        class={"absolute inset-0 #{a == -1 && "rotate-180"} drop-shadow-xl"}
+        width="100"
+        height="86.6"
+        alt=""
+      />
+      <span :if={a > -1} class="absolute -translate-x-1/2 left-1/2 top-2.5">
+        <TriominosWeb.GameLive.number value={a} />
       </span>
-      <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-0">
-        <%= d %>
+      <span :if={b > -1} class="absolute -translate-x-full right-0 top-1">
+        <TriominosWeb.GameLive.number value={b} />
       </span>
-      <span :if={e > -1} class="absolute translate-x-full left-0 bottom-0"><%= e %></span>
-      <span :if={f > -1} class="absolute translate-x-full left-0 top-0"><%= f %></span>
+      <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-1">
+        <TriominosWeb.GameLive.number value={c} />
+      </span>
+      <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-2.5">
+        <TriominosWeb.GameLive.number value={d} />
+      </span>
+      <span :if={e > -1} class="absolute translate-x-full left-0 bottom-1">
+        <TriominosWeb.GameLive.number value={e} />
+      </span>
+      <span :if={f > -1} class="absolute translate-x-full left-0 top-1">
+        <TriominosWeb.GameLive.number value={f} />
+      </span>
     </div>
+    """
+  end
+
+  def number(assigns) do
+    ~H"""
+    <img src={"/images/number#{assigns.value}.png"} width="12" height="16" alt="" />
     """
   end
 
