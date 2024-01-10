@@ -255,51 +255,6 @@ defmodule TriominosWeb.GameLive do
     """
   end
 
-  def handle_event("place", %{"piece" => id}, socket) do
-    piece = Enum.find(@pieces, fn x -> x.id == id end)
-
-    # remove piece from hand
-    hand = Enum.reject(socket.assigns.hand, fn x -> x.id == id end)
-
-    # determine location later from frontend
-    piece = Piece.set_x(piece, 21)
-    piece = Piece.set_y(piece, 20)
-
-    # [a1, b1, c1, d1, e1, f1] = Piece.get_value(piece)
-
-    # left_neighbour =
-    #   Enum.find(socket.assigns.board, fn x -> x.x == piece.x - 1 && x.y == piece.y end)
-
-    # right_neighbour =
-    #   Enum.find(socket.assigns.board, fn x -> x.x == piece.x+1 && x.y == piece.y end)
-
-    # A=B + E=D or F = A + D = C
-    # if left_neighbour != nil do
-    #   [a2, b2, c2, d2, _e2, _f2] = Piece.get_value(left_neighbour)
-    #   IO.inspect(a1 == b2 || e1 == d2)
-    #   IO.inspect(f1 == a2 || d1 == c2)
-    # end
-
-    # # B = A D = E or A = F C = D
-    # if right_neighbour != nil do
-    #   [_a2, b2, _c2, d2, _e2, _f2] = Piece.get_value(left_neighbour)
-    #   IO.inspect(a1 == b2 && e1 == d2)
-    #   IO.inspect(a1 == b2 && e1 == d2)
-    # end
-
-    # IO.inspect(left_neighbour)
-
-    # add piece to board
-    board = socket.assigns.board ++ [piece]
-
-    # add new piece to pieces
-    hand = hand ++ Enum.take_random(socket.assigns.pool, 1)
-
-    # remove piece from pool
-    pool = Enum.reject(socket.assigns.pool, fn x -> x in hand end)
-    {:noreply, assign(socket, hand: hand, pool: pool, board: board, dragging: nil)}
-  end
-
   def handle_event("refill", _, socket) do
     hand = socket.assigns.hand ++ Enum.take_random(socket.assigns.pool, 1)
     pool = Enum.reject(socket.assigns.pool, fn x -> x in hand end)
@@ -317,8 +272,6 @@ defmodule TriominosWeb.GameLive do
   end
 
   def handle_event("drag_end", %{"piece" => id}, socket) do
-    # validation logic goes here
-
     piece = Enum.find(@pieces, fn x -> x.id == id end)
     IO.puts("validate here")
     IO.inspect(piece)
