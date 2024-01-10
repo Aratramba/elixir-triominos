@@ -25,131 +25,129 @@ import triominos from "./triominos"
 
 let Hooks = {}
 
+const dragger = document.getElementById('dragger')
+dragger.addEventListener('pointermove', onMouseMove.bind(this), false);
+let x, y;
+
+function onMouseMove(e) {
+  x = e.clientX;
+  y = e.clientY;
+}
+
 Hooks.Board = {
-    mounted() {
-        this.el.style.transform = 'translate(-500px, -1000px)'
-    },
-    updated() {
-        this.el.style.transform = 'translate(-500px, -1000px)'
+  x: -500,
+  y: -1000,
+  dragX: 0,
+  dragY: 0,
+  move() {
+    this.el.style.transform = `translateX(${this.x}px) translateY(${this.y}px) translateZ(0)`
+  },
+  mounted() {
+    this.move();
+
+    onBoardDragStart = _onBoardDragStart.bind(this)
+    dragger.addEventListener('pointerdown', onBoardDragStart);
+
+    function _onBoardDragStart(e) {
+      const clickedElements = document.elementsFromPoint(e.clientX, e.clientY);
+      const board = clickedElements[1].id === 'board'
+
+      if (!board) return;
+      this.dragX = e.clientX;
+      this.dragY = e.clientY;
+
+      onBoardDrag = _onBoardDrag.bind(this)
+      onBoardDragEnd = _onBoardDragEnd.bind(this)
+      dragger.addEventListener('pointermove', onBoardDrag);
+      dragger.addEventListener('pointerup', onBoardDragEnd);
     }
+
+    function _onBoardDrag(e) {
+      e.preventDefault();
+      const prevX = this.dragX;
+      const prevY = this.dragY;
+
+      this.dragX = e.clientX;
+      this.dragY = e.clientY;
+
+      this.x += this.dragX - prevX;
+      this.y += this.dragY - prevY;
+      this.move();
+    }
+
+    function _onBoardDragEnd(e) {
+      e.preventDefault();
+      dragger.removeEventListener('pointermove', onBoardDrag);
+      dragger.removeEventListener('pointerup', onBoardDragEnd);
+    }
+  },
+  updated() {
+    this.move();
+  }
+}
+
+
+
+Hooks.Dragging = {
+  move() {
+    this.el.style.transform = `translateX(${x - 50}px) translateY(${y - 43}px) translateZ(0)`
+  },
+  mounted() {
+    const id = this.el.getAttribute('phx-value-piece')
+
+    onKeyUp = _onKeyUp.bind(this)
+    addEventListener('keyup', onKeyUp)
+
+    onPieceDrag = _onPieceDrag.bind(this)
+    onPieceDragEnd = _onPieceDragEnd.bind(this)
+    dragger.addEventListener('pointermove', onPieceDrag);
+    dragger.addEventListener('pointerup', onPieceDragEnd);
+    this.el.style.transform = `translateX(${x - 50}px) translateY(${y - 43}px) translateZ(0)`
+
+    function _onPieceDrag(e) {
+      e.preventDefault();
+      this.move();
+    }
+
+    function _onPieceDragEnd(e) {
+      e.preventDefault();
+      this.pushEvent('drag_end', { piece: id })
+      removeEventListener('keyup', onKeyUp)
+      dragger.removeEventListener('pointermove', onPieceDrag);
+      dragger.removeEventListener('pointerup', onPieceDragEnd);
+    }
+
+    function _onKeyUp(e) {
+      if (e.keyCode === 32) {
+        this.pushEvent('rotate', { piece: id })
+      }
+    }
+  },
+  updated() {
+    this.move();
+  }
 }
 
 Hooks.Hand = {
+  mounted() {
+    const dragger = document.getElementById('dragger')
 
-    /**
-     * How about: 
-     * on drag start we send a message to the server that makes it the current dragging item
-     * from then on we can rotate?
-     */
+    onDragStart = _onDragStart.bind(this)
+    dragger.addEventListener('pointerdown', onDragStart);
 
+    function _onDragStart(e) {
+      e.preventDefault();
 
-    drag(elements) {
-        const Hook = this;
-        console.log('init drag')
+      const clickedElements = document.elementsFromPoint(e.clientX, e.clientY);
+      const piece = clickedElements.find(element => element.classList.contains('draggable-piece'))
 
-        let activePiece = null;
+      if (piece) {
+        this.pushEvent('drag_start', { piece: piece.id })
+        return;
+      }
 
-        const dragger = document.getElementById('dragger')
-
-        dragger.addEventListener('pointerdown', onDragStart.bind(this), false);
-        addEventListener('keyup', onKeyUp.bind(this), false)
-
-        function onDragStart(e) {
-            e.preventDefault();
-
-            const clickedElements = document.elementsFromPoint(e.clientX, e.clientY);
-            const piece = clickedElements.find(element => element.classList.contains('draggable-piece'))
-
-            if (!piece) return;
-            let boundOnPieceDragStart = onPieceDragStart.bind(this, e, piece)
-            boundOnPieceDragStart();
-
-        }
-
-        /**
-         * Piece drag logic
-         */
-
-        function onPieceDragStart(e, piece) {
-
-            dragger.addEventListener('pointermove', onPieceDrag.bind(this), false);
-            dragger.addEventListener('pointerup', onPieceDragEnd.bind(this), false);
-
-            dragger.classList.remove('pointers-events-none');
-
-            // const clone = document.createElement('div');
-            // clone.innerHTML = piece.innerHTML
-            // clone.id = piece.id;
-            const clone = piece;
-
-            dragger.appendChild(piece);
-
-            const x = e.clientX - 50;
-            const y = e.clientY - 43;
-
-            this.offsetX = e.offsetX;
-            this.offsetY = e.offsetY;
-
-            this.activePiece = clone;
-            this.activePiece.style.transform = `translateX(${x}px) translateY(${y}px) translateZ(0)`
-        }
-
-        function onPieceDrag(e) {
-            if (!this.activePiece) return;
-            e.preventDefault();
-            const x = e.clientX - 50;
-            const y = e.clientY - 43;
-            this.activePiece.style.transform = `translateX(${x}px) translateY(${y}px) translateZ(0)`
-        }
-
-        function onPieceDragEnd(e) {
-            if (!this.activePiece) return;
-
-            e.preventDefault();
-            const dragger = document.getElementById('dragger')
-            dragger.removeChild(this.activePiece)
-
-            const id = this.activePiece.id
-            console.log(this.activePiece)
-            Hook.pushEvent('place', { piece: id })
-
-            this.activePiece = null;
-            this.offsetX = null;
-            this.offsetY = null;
-            dragger.classList.add('pointer-events-none');
-            dragger.removeEventListener('pointermove', onPieceDrag, false);
-            dragger.removeEventListener('pointerup', onPieceDragEnd, false);
-
-        }
-
-        function onKeyUp(e) {
-            // space
-            if (e.keyCode === 32) {
-                const id = this.activePiece.id
-                Hook.pushEvent('rotate', { piece: id })
-
-                // const pieceShape = this.activePiece.firstElementChild;
-                // const rotate = getComputedStyle(pieceShape).getPropertyValue('--rotate') || 0;
-                // this.activePiece.firstElementChild.style.rotate = 'var(--rotate)deg'
-                // const originalItem = document.querySelector(`[phx-value-piece="${id}"]`)
-                // console.log(originalItem)
-                // const rotation = +this.activePiece.getAttribute('data-rotation');
-                // this.activePiece.setAttribute('data-rotation', rotation + )
-            }
-        }
-
-    },
-    mounted() {
-        const pieces = this.el.querySelectorAll('.piece')
-        this.drag(pieces)
-    },
-    // updated(e) {
-    //     console.log('updated', e)
-    // },
-    // handleEvent(e, payload) {
-    //     console.log('handle event')
-    //     console.log(e, payload)
-    // }
+    }
+  },
 }
 
 

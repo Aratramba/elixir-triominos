@@ -160,13 +160,45 @@ defmodule TriominosWeb.GameLive do
     board = [first_piece]
     IO.inspect(board)
 
-    {:ok, assign(socket, hand: hand, pool: pool, board: board)}
+    {:ok, assign(socket, hand: hand, pool: pool, board: board, dragging: nil)}
   end
 
   def render(assigns) do
     ~H"""
     <div class="grid grid-cols-5 h-screen overflow-hidden relative">
-      <div id="dragger" class="absolute inset-0 z-50"></div>
+      <div id="dragger" class="absolute inset-0 z-50">
+        <% piece = @dragging %>
+        <div
+          :if={@dragging != nil}
+          id="dragging"
+          phx-hook="Dragging"
+          phx-value-piece={piece.id}
+          id={piece.id}
+          class="draggable-piece select-none"
+        >
+          <% [a, b, c, d, e, f] = piece.value %>
+          <div class="piece-shape">
+            <svg viewBox="0 0 100 86.6" class="absolute inset-0 fill-white">
+              <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" />
+              <polygon :if={a == -1} points="0 0 100 0 50 86.6" />
+            </svg>
+            <svg viewBox="0 0 100 86.6" class="absolute inset-0 fill-white">
+              <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" />
+              <polygon :if={a == -1} points="0 0 100 0 50 86.6" />
+            </svg>
+            <span :if={a > -1} class="absolute -translate-x-1/2 left-1/2 top-0"><%= a %></span>
+            <span :if={b > -1} class="absolute -translate-x-full right-0 top-0"><%= b %></span>
+            <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-0">
+              <%= c %>
+            </span>
+            <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-0">
+              <%= d %>
+            </span>
+            <span :if={e > -1} class="absolute translate-x-full left-0 bottom-0"><%= e %></span>
+            <span :if={f > -1} class="absolute translate-x-full left-0 top-0"><%= f %></span>
+          </div>
+        </div>
+      </div>
 
       <%!-- topbar --%>
       <div class="absolute inset-x-0 top-0 h-16 border z-40 bg-darkgray">
@@ -284,26 +316,20 @@ defmodule TriominosWeb.GameLive do
 
     # remove piece from pool
     pool = Enum.reject(socket.assigns.pool, fn x -> x in hand end)
-
-    {:noreply, assign(socket, hand: hand, pool: pool, board: board)}
+    {:noreply, assign(socket, hand: hand, pool: pool, board: board, dragging: nil)}
   end
 
-  def handle_event("rotate", %{"piece" => id}, socket) do
-    hand =
-      Enum.map(socket.assigns.hand, fn item ->
-        if id == Piece.get_id(item) do
-          Piece.rotate(item)
-        else
-          item
-        end
-      end)
-
-    {:noreply, assign(socket, hand: hand)}
+  def handle_event("rotate", %{"piece" => _id}, socket) do
+    dragging = Piece.rotate(socket.assigns.dragging)
+    {:noreply, assign(socket, dragging: dragging)}
   end
 
-  def handle_event("drop", id) do
-    IO.inspect(id)
-    IO.puts(~c"----------")
-    # {:noreply, socket}
+  def handle_event("drag_start", %{"piece" => id}, socket) do
+    piece = Enum.find(@pieces, fn x -> x.id == id end)
+    {:noreply, assign(socket, dragging: piece)}
+  end
+
+  def handle_event("drag_end", %{"piece" => _id}, socket) do
+    {:noreply, assign(socket, dragging: nil)}
   end
 end
