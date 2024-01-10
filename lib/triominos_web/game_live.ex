@@ -68,24 +68,6 @@ defmodule TriominosWeb.GameLive do
 
   alias TriominosWeb.Piece
 
-  # next: grid logic
-  # next: draggable div
-  # next: draggable piece
-  # next: grid snap
-  # next: piece place highlight
-  # next: piece place validation
-
-  # x_values = Enum.to_list(-55..55)
-  #   y_values = Enum.to_list(-55..55)
-
-  #   grid = for x <- x_values, y <- y_values, do: [x, y]
-
-  #   Enum.chunk_every(grid, 4)
-
-  # like this? Or ?
-  # Or should it not be a grid an just be relative values, like a vector?
-  # most elegant is likely a vector, but then we need to calculate the position of the piece
-
   @pieces [
     Piece.new("000"),
     Piece.new("001"),
@@ -263,6 +245,7 @@ defmodule TriominosWeb.GameLive do
 
   def handle_event("rotate", %{"piece" => _id}, socket) do
     dragging = Piece.rotate(socket.assigns.dragging)
+    # rotate the one in hand too?
     {:noreply, assign(socket, dragging: dragging)}
   end
 
@@ -272,10 +255,7 @@ defmodule TriominosWeb.GameLive do
   end
 
   def handle_event("drag_end", %{"piece" => id}, socket) do
-    piece = Enum.find(@pieces, fn x -> x.id == id end)
-    IO.puts("validate here")
-    IO.inspect(piece)
-    IO.inspect(id)
+    piece = socket.assigns.dragging
 
     # remove piece from hand
     hand = Enum.reject(socket.assigns.hand, fn x -> x.id == id end)
@@ -288,7 +268,7 @@ defmodule TriominosWeb.GameLive do
     board = socket.assigns.board ++ [piece]
 
     # add new piece to pieces
-    hand = hand ++ Enum.take_random(socket.assigns.pool, 1)
+    hand = Enum.take_random(socket.assigns.pool, 1) ++ hand
 
     # remove piece from pool
     pool = Enum.reject(socket.assigns.pool, fn x -> x in hand end)
