@@ -89,11 +89,12 @@ Hooks.Board = {
 
 
 Hooks.Dragging = {
+  id: null,
   move() {
     this.el.style.transform = `translateX(${x - 50}px) translateY(${y - 43}px) translateZ(0)`
   },
   mounted() {
-    const id = this.el.getAttribute('data-id')
+    this.id = this.el.firstElementChild.getAttribute('data-id')
 
     onKeyUp = _onKeyUp.bind(this)
     addEventListener('keyup', onKeyUp)
@@ -111,7 +112,7 @@ Hooks.Dragging = {
 
     function _onPieceDragEnd(e) {
       e.preventDefault();
-      this.pushEvent('drag_end', { piece: id })
+      this.pushEvent('drag_end', { piece: this.id })
       removeEventListener('keyup', onKeyUp)
       dragger.removeEventListener('pointermove', onPieceDrag);
       dragger.removeEventListener('pointerup', onPieceDragEnd);
@@ -119,7 +120,7 @@ Hooks.Dragging = {
 
     function _onKeyUp(e) {
       if (e.keyCode === 32) {
-        this.pushEvent('rotate', { piece: id })
+        this.pushEvent('rotate', { piece: this.id })
       }
     }
   },
