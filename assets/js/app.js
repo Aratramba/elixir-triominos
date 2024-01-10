@@ -50,9 +50,9 @@ Hooks.Board = {
 
     function _onBoardDragStart(e) {
       const clickedElements = document.elementsFromPoint(e.clientX, e.clientY);
-      const board = clickedElements[1].id === 'board'
+      const draggablePiece = clickedElements.find(element => element.hasAttribute('data-draggable'))
 
-      if (!board) return;
+      if (draggablePiece) return;
       this.dragX = e.clientX;
       this.dragY = e.clientY;
 
@@ -93,7 +93,7 @@ Hooks.Dragging = {
     this.el.style.transform = `translateX(${x - 50}px) translateY(${y - 43}px) translateZ(0)`
   },
   mounted() {
-    const id = this.el.getAttribute('phx-value-piece')
+    const id = this.el.getAttribute('data-id')
 
     onKeyUp = _onKeyUp.bind(this)
     addEventListener('keyup', onKeyUp)
@@ -139,10 +139,10 @@ Hooks.Hand = {
       e.preventDefault();
 
       const clickedElements = document.elementsFromPoint(e.clientX, e.clientY);
-      const piece = clickedElements.find(element => element.classList.contains('draggable-piece'))
+      const piece = clickedElements.find(element => element.hasAttribute('data-draggable'))
 
       if (piece) {
-        this.pushEvent('drag_start', { piece: piece.id })
+        this.pushEvent('drag_start', { piece: piece.getAttribute('data-id') })
         return;
       }
 

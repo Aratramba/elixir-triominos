@@ -64,6 +64,7 @@ end
 
 defmodule TriominosWeb.GameLive do
   use Phoenix.LiveView
+  use Phoenix.Component
 
   alias TriominosWeb.Piece
 
@@ -176,27 +177,7 @@ defmodule TriominosWeb.GameLive do
           id={piece.id}
           class="draggable-piece select-none"
         >
-          <% [a, b, c, d, e, f] = piece.value %>
-          <div class="piece-shape">
-            <svg viewBox="0 0 100 86.6" class="absolute inset-0 fill-white">
-              <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" />
-              <polygon :if={a == -1} points="0 0 100 0 50 86.6" />
-            </svg>
-            <svg viewBox="0 0 100 86.6" class="absolute inset-0 fill-white">
-              <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" />
-              <polygon :if={a == -1} points="0 0 100 0 50 86.6" />
-            </svg>
-            <span :if={a > -1} class="absolute -translate-x-1/2 left-1/2 top-0"><%= a %></span>
-            <span :if={b > -1} class="absolute -translate-x-full right-0 top-0"><%= b %></span>
-            <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-0">
-              <%= c %>
-            </span>
-            <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-0">
-              <%= d %>
-            </span>
-            <span :if={e > -1} class="absolute translate-x-full left-0 bottom-0"><%= e %></span>
-            <span :if={f > -1} class="absolute translate-x-full left-0 top-0"><%= f %></span>
-          </div>
+          <TriominosWeb.GameLive.shape value={piece.value} id={piece.id} draggable={false} />
         </div>
       </div>
 
@@ -207,36 +188,25 @@ defmodule TriominosWeb.GameLive do
 
       <%!-- pool --%>
       <div class="absolute w-[50vh] h-[50vh] top-0 right-0 hover:h-[75vh] hover:w-[75vh] transition-all border rounded-full translate-x-1/2 -translate-y-1/2 flex items-end z-20">
-        pool
+        <%= for piece <- @pool do %>
+          <% randomX = Enum.random(0..75)
+          randomY = Enum.random(0..75)
+          randomR = Enum.random(0..360) %>
+
+          <div
+            class="piece absolute"
+            style={"transform: rotate(#{randomR}deg); top: #{randomY}%; left: #{randomX}%"}
+          >
+            <TriominosWeb.GameLive.shape value={piece.value} id={piece.id} draggable={false} />
+          </div>
+        <% end %>
       </div>
 
       <%!-- hand --%>
       <div class="absolute inset-x-0 bottom-0 h-24 z-30 bg-darkblue">
         <div class="flex gap-4 no-wrap overflow-scroll" id="hand" phx-hook="Hand">
           <%= for piece <- @hand do %>
-            <% [a, b, c, d, e, f] = piece.value %>
-            <div phx-value-piece={piece.id} id={piece.id} class="draggable-piece select-none">
-              <div class="piece-shape">
-                <svg viewBox="0 0 100 86.6" class="absolute inset-0 fill-white">
-                  <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" />
-                  <polygon :if={a == -1} points="0 0 100 0 50 86.6" />
-                </svg>
-                <svg viewBox="0 0 100 86.6" class="absolute inset-0 fill-white">
-                  <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" />
-                  <polygon :if={a == -1} points="0 0 100 0 50 86.6" />
-                </svg>
-                <span :if={a > -1} class="absolute -translate-x-1/2 left-1/2 top-0"><%= a %></span>
-                <span :if={b > -1} class="absolute -translate-x-full right-0 top-0"><%= b %></span>
-                <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-0">
-                  <%= c %>
-                </span>
-                <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-0">
-                  <%= d %>
-                </span>
-                <span :if={e > -1} class="absolute translate-x-full left-0 bottom-0"><%= e %></span>
-                <span :if={f > -1} class="absolute translate-x-full left-0 top-0"><%= f %></span>
-              </div>
-            </div>
+            <TriominosWeb.GameLive.shape value={piece.value} id={piece.id} draggable={true} />
           <% end %>
         </div>
       </div>
@@ -245,31 +215,37 @@ defmodule TriominosWeb.GameLive do
       <div class="absolute inset-0 z-10 bg-blue overflow-hidden">
         <div id="board" phx-hook="Board">
           <%= for piece <- @board do %>
-            <% [a, b, c, d, e, f] = piece.value %>
             <div
               class="piece absolute left-0 top-0"
               style={"transform: translateX(#{piece.x * 50}px) translateY(#{piece.y * 68.6}px)"}
             >
-              <div phx-value-piece={piece.id} class="piece-shape select-none">
-                <svg viewBox="0 0 100 86.6" class="absolute inset-0">
-                  <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" style="fill:white" />
-                  <polygon :if={a == -1} points="0 0 100 0 50 86.6" style="fill:white" />
-                </svg>
-                <span :if={a > -1} class="absolute -translate-x-1/2 left-1/2 top-0"><%= a %></span>
-                <span :if={b > -1} class="absolute -translate-x-full right-0 top-0"><%= b %></span>
-                <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-0">
-                  <%= c %>
-                </span>
-                <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-0">
-                  <%= d %>
-                </span>
-                <span :if={e > -1} class="absolute translate-x-full left-0 bottom-0"><%= e %></span>
-                <span :if={f > -1} class="absolute translate-x-full left-0 top-0"><%= f %></span>
-              </div>
+              <TriominosWeb.GameLive.shape value={piece.value} id={piece.id} draggable={false} />
             </div>
           <% end %>
         </div>
       </div>
+    </div>
+    """
+  end
+
+  def shape(assigns) do
+    ~H"""
+    <% [a, b, c, d, e, f] = @value %>
+    <div class="piece-shape select-none" data-draggable={@draggable == true} data-id={@id}>
+      <svg viewBox="0 0 100 86.6" class="absolute inset-0">
+        <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" style="fill:white" class="drop-shadow" />
+        <polygon :if={a == -1} points="0 0 100 0 50 86.6" style="fill:white" class="drop-shadow" />
+      </svg>
+      <span :if={a > -1} class="absolute -translate-x-1/2 left-1/2 top-0"><%= a %></span>
+      <span :if={b > -1} class="absolute -translate-x-full right-0 top-0"><%= b %></span>
+      <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-0">
+        <%= c %>
+      </span>
+      <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-0">
+        <%= d %>
+      </span>
+      <span :if={e > -1} class="absolute translate-x-full left-0 bottom-0"><%= e %></span>
+      <span :if={f > -1} class="absolute translate-x-full left-0 top-0"><%= f %></span>
     </div>
     """
   end
