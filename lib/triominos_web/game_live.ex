@@ -150,16 +150,14 @@ defmodule TriominosWeb.GameLive do
     ~H"""
     <div class="grid grid-cols-5 h-screen overflow-hidden relative">
       <div id="dragger" class="absolute inset-0 z-50">
-        <% piece = @dragging %>
         <div
           :if={@dragging != nil}
           id="dragging"
           phx-hook="Dragging"
-          phx-value-piece={piece.id}
-          id={piece.id}
-          class="draggable-piece select-none"
+          phx-value-piece={@dragging.id}
+          class="absolute left-0 top-0"
         >
-          <TriominosWeb.GameLive.shape value={piece.value} id={piece.id} draggable={false} />
+          <.shape value={@dragging.value} id={@dragging.id} draggable={false} />
         </div>
       </div>
 
@@ -169,7 +167,7 @@ defmodule TriominosWeb.GameLive do
       </div>
 
       <%!-- pool --%>
-      <div class="absolute w-[50vh] h-[50vh] top-0 right-0 hover:h-[75vh] hover:w-[75vh] transition-all border rounded-full translate-x-1/2 -translate-y-1/2 flex items-end overflow-scroll z-50">
+      <div class="absolute w-[50vh] h-[50vh] top-0 right-0 hover:h-[75vh] hover:w-[75vh] transition-all border rounded-full translate-x-1/2 -translate-y-1/2 flex items-end xoverflow-scroll z-50">
         <%= for piece <- @pool do %>
           <% randomX = Enum.random(0..75)
           randomY = Enum.random(0..75)
@@ -180,7 +178,7 @@ defmodule TriominosWeb.GameLive do
             style={"transform: rotate(#{randomR}deg); top: #{randomY}%; left: #{randomX}%"}
             phx-click="refill"
           >
-            <TriominosWeb.GameLive.shape value={piece.value} id={piece.id} draggable={false} />
+            <.shape value={piece.value} id={piece.id} draggable={false} />
           </div>
         <% end %>
       </div>
@@ -189,7 +187,7 @@ defmodule TriominosWeb.GameLive do
       <div class="absolute inset-x-0 bottom-0 h-24 z-30 bg-darkblue">
         <div class="flex gap-4 flex-nowrap overflow-scroll" id="hand" phx-hook="Hand">
           <%= for piece <- @hand do %>
-            <TriominosWeb.GameLive.shape value={piece.value} id={piece.id} draggable={true} />
+            <.shape value={piece.value} id={piece.id} draggable={true} />
           <% end %>
         </div>
       </div>
@@ -204,9 +202,13 @@ defmodule TriominosWeb.GameLive do
                 translateX(calc(#{piece.x}*var(--piece-width)/2))
                 translateY(calc(#{piece.y}*var(--piece-height)))"}
             >
-              <TriominosWeb.GameLive.shape value={piece.value} id={piece.id} draggable={false} />
+              <.shape value={piece.value} id={piece.id} draggable={false} />
             </div>
           <% end %>
+
+          <div :if={@dragging != nil} id="ghost" class="absolute left-0 top-0 opacity-50">
+            <.shape value={@dragging.value} id={@dragging.id} draggable={false} />
+          </div>
         </div>
       </div>
     </div>
@@ -221,10 +223,6 @@ defmodule TriominosWeb.GameLive do
       data-draggable={@draggable == true}
       data-id={@id}
     >
-      <%!-- <svg viewBox="0 0 100 86.6" class="absolute inset-0">
-        <polygon :if={a != -1} points="50 0 0 86.6 100 86.6" style="fill:white" class="drop-shadow" />
-        <polygon :if={a == -1} points="0 0 100 0 50 86.6" style="fill:white" class="drop-shadow" />
-      </svg> --%>
       <img
         src="/images/tile2.png"
         class={"absolute inset-0 #{a == -1 && "rotate-180"} drop-shadow-xl"}
@@ -232,31 +230,20 @@ defmodule TriominosWeb.GameLive do
         height="86.6"
         alt=""
       />
-      <span :if={a > -1} class="absolute -translate-x-1/2 left-1/2 top-2.5">
-        <TriominosWeb.GameLive.number value={a} />
-      </span>
-      <span :if={b > -1} class="absolute -translate-x-full right-0 top-1">
-        <TriominosWeb.GameLive.number value={b} />
-      </span>
-      <span :if={c > -1} class="absolute -translate-x-full right-0 bottom-1">
-        <TriominosWeb.GameLive.number value={c} />
-      </span>
-      <span :if={d > -1} class="absolute -translate-x-1/2 left-1/2 bottom-2.5">
-        <TriominosWeb.GameLive.number value={d} />
-      </span>
-      <span :if={e > -1} class="absolute translate-x-full left-0 bottom-1">
-        <TriominosWeb.GameLive.number value={e} />
-      </span>
-      <span :if={f > -1} class="absolute translate-x-full left-0 top-1">
-        <TriominosWeb.GameLive.number value={f} />
-      </span>
+
+      <.number :if={a > -1} value={a} class="absolute -translate-x-1/2 left-1/2 top-2.5" />
+      <.number :if={b > -1} value={b} class="absolute -translate-x-full right-0 top-1" />
+      <.number :if={c > -1} value={c} class="absolute -translate-x-full right-0 bottom-1" />
+      <.number :if={d > -1} value={d} class="absolute -translate-x-1/2 left-1/2 bottom-2.5" />
+      <.number :if={e > -1} value={e} class="absolute translate-x-full left-0 bottom-1" />
+      <.number :if={f > -1} value={f} class="absolute translate-x-full left-0 top-1" />
     </div>
     """
   end
 
   def number(assigns) do
     ~H"""
-    <img src={"/images/number#{assigns.value}.png"} width="12" height="16" alt="" />
+    <img src={"/images/number#{@value}.png"} class={@class} width="12" height="16" alt="" />
     """
   end
 
