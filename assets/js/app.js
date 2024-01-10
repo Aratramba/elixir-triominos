@@ -21,13 +21,21 @@ import "phoenix_html"
 import { Socket } from "phoenix"
 import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
-import triominos from "./triominos"
 
 let Hooks = {}
 
 const dragger = document.getElementById('dragger')
 dragger.addEventListener('pointermove', onMouseMove.bind(this), false);
-let x, y;
+let x;
+let y;
+let boardX = -500
+let boardY = -1000
+
+const PIECE_HEIGHT = 86.6;
+const PIECE_WIDTH = 100;
+
+document.body.style.setProperty('--piece-height', `${PIECE_HEIGHT}px`);
+document.body.style.setProperty('--piece-width', `${PIECE_WIDTH}px`);
 
 function onMouseMove(e) {
   x = e.clientX;
@@ -35,12 +43,10 @@ function onMouseMove(e) {
 }
 
 Hooks.Board = {
-  x: -500,
-  y: -1000,
   dragX: 0,
   dragY: 0,
   move() {
-    this.el.style.transform = `translateX(${this.x}px) translateY(${this.y}px) translateZ(0)`
+    this.el.style.transform = `translateX(${boardX}px) translateY(${boardY}px) translateZ(0)`
   },
   mounted() {
     this.move();
@@ -70,8 +76,9 @@ Hooks.Board = {
       this.dragX = e.clientX;
       this.dragY = e.clientY;
 
-      this.x += this.dragX - prevX;
-      this.y += this.dragY - prevY;
+      boardX += this.dragX - prevX;
+      boardY += this.dragY - prevY;
+
       this.move();
     }
 
@@ -79,6 +86,8 @@ Hooks.Board = {
       e.preventDefault();
       dragger.removeEventListener('pointermove', onBoardDrag);
       dragger.removeEventListener('pointerup', onBoardDragEnd);
+      this.dragX = 0;
+      this.dragY = 0;
     }
   },
   updated() {
@@ -91,7 +100,7 @@ Hooks.Board = {
 Hooks.Dragging = {
   id: null,
   move() {
-    this.el.style.transform = `translateX(${x - 50}px) translateY(${y - 43}px) translateZ(0)`
+    this.el.style.transform = `translateX(${x - (PIECE_WIDTH / 2)}px) translateY(${y - (PIECE_HEIGHT / 2)}px) translateZ(0)`
   },
   mounted() {
     this.id = this.el.firstElementChild.getAttribute('data-id')
@@ -108,11 +117,19 @@ Hooks.Dragging = {
     function _onPieceDrag(e) {
       e.preventDefault();
       this.move();
+
+      const x = Math.abs(Math.ceil((boardX - e.clientX + (PIECE_WIDTH / 2)) / (PIECE_WIDTH / 2)))
+      const y = Math.abs(Math.ceil((boardY - e.clientY + (PIECE_HEIGHT / 2)) / PIECE_HEIGHT))
+      console.log(x, y)
     }
 
     function _onPieceDragEnd(e) {
       e.preventDefault();
-      this.pushEvent('drag_end', { piece: this.id })
+
+      const x = Math.abs(Math.ceil((boardX - e.clientX + (PIECE_WIDTH / 2)) / (PIECE_WIDTH / 2)))
+      const y = Math.abs(Math.ceil((boardY - e.clientY + (PIECE_HEIGHT / 2)) / PIECE_HEIGHT))
+      console.log(x, y)
+      this.pushEvent('drag_end', { x, y })
       removeEventListener('keyup', onKeyUp)
       dragger.removeEventListener('pointermove', onPieceDrag);
       dragger.removeEventListener('pointerup', onPieceDragEnd);
