@@ -34,14 +34,14 @@ let y;
 let boardX = -2000
 let boardY = -2000
 
-const PIECE_HEIGHT = 86.6;
+const PIECE_HEIGHT = 86;
 const PIECE_WIDTH = 100;
 
 document.body.style.setProperty('--piece-height', `${PIECE_HEIGHT}px`);
 document.body.style.setProperty('--piece-width', `${PIECE_WIDTH}px`);
 
 function roundTo(n, to) {
-  return Math.round(Math.round(n / to) * to)
+  return Math.floor(Math.floor(n / to) * to)
 }
 
 function onMouseMove(e) {
@@ -155,7 +155,6 @@ Hooks.Dragging = {
         time = new Date();
         this.pushEvent('drag_move', this.get_position())
       }
-
     }
 
     function _onPieceDragEnd(e) {
