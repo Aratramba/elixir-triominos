@@ -42,9 +42,20 @@ defmodule TriominosWeb.Piece do
   by moving the last value to the front
   """
 
-  def rotate(item) do
+  def rotateCW(item) do
     [a, b, c, d, e, f] = item.value
     new_value = [f, a, b, c, d, e]
+    %__MODULE__{item | value: new_value}
+  end
+
+  @doc """
+  Rotate a piece counter clockwise
+  by moving the first value to the back
+  """
+
+  def rotateCCW(item) do
+    [a, b, c, d, e, f] = item.value
+    new_value = [b, c, d, e, f, a]
     %__MODULE__{item | value: new_value}
   end
 
@@ -155,7 +166,13 @@ defmodule TriominosWeb.GameLive do
     board = [first_piece]
 
     {:ok,
-     assign(socket, hand: hand, pool: pool, board: board, dragging: nil, move_status: :default)}
+     assign(socket,
+       hand: hand,
+       pool: pool,
+       board: board,
+       dragging: nil,
+       move_status: :default
+     )}
   end
 
   def render(assigns) do
@@ -169,14 +186,16 @@ defmodule TriominosWeb.GameLive do
           phx-value-piece={@dragging.id}
           class="absolute left-0 top-0"
         >
-          <.shape
+          <%!-- <.shape
             value={@dragging.value}
             id={@dragging.id}
             draggable={false}
             show_labels={true}
             rotation={0}
             move_status={@move_status}
-          />
+          /> --%>
+          <!--<span :if={@move_status}><%= @move_status %></span>-->
+          <span />
         </div>
       </div>
 
@@ -256,26 +275,18 @@ defmodule TriominosWeb.GameLive do
           <% end %>
 
           <div :if={@dragging != nil} id="ghost" class="absolute left-0 top-0 transition-transform">
-            <span class="drop-shadow blur absolute top-0 left-0 opacity-20">
-              <.shape
-                value={@dragging.value}
-                id={@dragging.id}
-                draggable={false}
-                show_labels={true}
-                rotation={0}
-                move_status={@move_status}
-              />
-            </span>
-            <span class="absolute top-0 left-0 opacity-20">
-              <.shape
-                value={@dragging.value}
-                id={@dragging.id}
-                draggable={false}
-                show_labels={true}
-                rotation={0}
-                move_status={@move_status}
-              />
-            </span>
+            <div class={if @move_status == :no_neighbours, do: "opacity-40", else: "opacity-100"}>
+              <span class="absolute top-0 left-0">
+                <.shape
+                  value={@dragging.value}
+                  id={@dragging.id}
+                  draggable={false}
+                  show_labels={true}
+                  rotation={0}
+                  move_status={@move_status}
+                />
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -287,7 +298,7 @@ defmodule TriominosWeb.GameLive do
     ~H"""
     <% [a, b, c, d, e, f] = @value %>
     <div
-      class="select-none shrink-0 block relative w-[100px] h-[86.6px] origin-center"
+      class="select-none shrink-0 block relative w-[100px] h-[86px] origin-[50px_43px]"
       data-draggable={@draggable == true}
       data-id={@id}
       style={"transform: rotate(#{@rotation}deg) scale(0.95)"}
@@ -295,7 +306,13 @@ defmodule TriominosWeb.GameLive do
       <% image =
         case @move_status do
           :valid -> "/images/tile_valid.png"
-          :invalid -> "/images/tile_invalid.png"
+          :no_neighbours -> "/images/tile_dragging.png"
+          :on_top -> "/images/tile_invalid.png"
+          :invalid_top -> "/images/tile_invalid.png"
+          :invalid_bottom -> "/images/tile_invalid.png"
+          :invalid_left -> "/images/tile_invalid.png"
+          :invalid_right -> "/images/tile_invalid.png"
+          :invalid_neighbours -> "/images/tile_invalid.png"
           _ -> "/images/tile_default.png"
         end %>
 
@@ -303,7 +320,7 @@ defmodule TriominosWeb.GameLive do
         src={image}
         class={"absolute inset-0 #{a == -1 && "rotate-180"} drop-shadow-xl"}
         width="100"
-        height="86.6"
+        height="86"
         alt=""
       />
       <%= if @show_labels != false do %>
@@ -330,8 +347,12 @@ defmodule TriominosWeb.GameLive do
     {:noreply, assign(socket, hand: hand, pool: pool)}
   end
 
-  def handle_event("rotate", %{"piece" => _id}, socket) do
-    dragging = Piece.rotate(socket.assigns.dragging)
+  def handle_event("rotate", %{"piece" => _id, "reverse" => reverse}, socket) do
+    dragging =
+      if !reverse,
+        do: Piece.rotateCW(socket.assigns.dragging),
+        else: Piece.rotateCCW(socket.assigns.dragging)
+
     {:noreply, assign(socket, dragging: dragging)}
   end
 
@@ -342,20 +363,20 @@ defmodule TriominosWeb.GameLive do
 
   def handle_event("drag_move", %{"x" => x, "y" => y}, socket) do
     piece = socket.assigns.dragging
-    valid = validate(piece, %{"x" => x, "y" => y, "board" => socket.assigns.board})
+    {status} = validate(piece, %{"x" => x, "y" => y, "board" => socket.assigns.board})
 
-    if valid do
+    if status == :valid do
       {:noreply, assign(socket, move_status: :valid)}
     else
-      {:noreply, assign(socket, move_status: :invalid)}
+      {:noreply, assign(socket, move_status: status)}
     end
   end
 
   def handle_event("drag_end", %{"x" => x, "y" => y}, socket) do
     piece = socket.assigns.dragging
-    valid = validate(piece, %{"x" => x, "y" => y, "board" => socket.assigns.board})
+    {status} = validate(piece, %{"x" => x, "y" => y, "board" => socket.assigns.board})
 
-    if valid do
+    if status == :valid do
       # remove piece from hand
       hand = Enum.reject(socket.assigns.hand, fn p -> p.id == piece.id end)
 
@@ -375,7 +396,7 @@ defmodule TriominosWeb.GameLive do
       {:noreply,
        assign(socket, hand: hand, pool: pool, board: board, dragging: nil, move_status: :default)}
     else
-      {:noreply, assign(socket, dragging: nil, move_status: :default)}
+      {:noreply, assign(socket, dragging: nil, move_status: status)}
     end
   end
 
@@ -393,24 +414,23 @@ defmodule TriominosWeb.GameLive do
 
     has_neighbours = top_neighbour || bottom_neighbour || left_neighbour || right_neighbour
 
+    # special case: has bottom neighbour, but no side or top neighbours
+    has_only_bottom_neighbour =
+      bottom_neighbour && !top_neighbour && !left_neighbour && !right_neighbour
+
     neighbours_valid = top_valid && bottom_valid && left_valid && right_valid
 
-    if !has_neighbours do
-      IO.puts("rejected: no neighbours")
+    cond do
+      on_top != nil -> {:on_top}
+      has_only_bottom_neighbour -> {:invalid_bottom}
+      !has_neighbours -> {:no_neighbours}
+      !top_valid -> {:invalid_top}
+      !bottom_valid -> {:invalid_bottom}
+      !left_valid -> {:invalid_left}
+      !right_valid -> {:invalid_right}
+      !neighbours_valid -> {:invalid_neighbours}
+      true -> {:valid}
     end
-
-    if on_top != nil do
-      IO.puts("rejected: on top of another piece")
-    end
-
-    if !neighbours_valid do
-      IO.puts("rejected: neighbours not valid")
-    end
-
-    valid =
-      !on_top && has_neighbours && neighbours_valid
-
-    valid
   end
 
   def validate_move("top", _piece, nil) do
@@ -425,10 +445,8 @@ defmodule TriominosWeb.GameLive do
     match1 = f == e2 && f != -1
     match2 = b == c2 && b != -1
     match3 = a == d2 && a != -1
-    valid = rotation_ok && ((match1 && match2) || match3)
 
-    IO.puts("top ok: #{valid}")
-    valid
+    rotation_ok && ((match1 && match2) || match3)
   end
 
   def validate_move("bottom", _piece, nil) do
@@ -436,17 +454,15 @@ defmodule TriominosWeb.GameLive do
   end
 
   def validate_move("bottom", piece, neighbour) do
-    [a, b, c, _d, e, _f] = piece.value
+    [a, b, c, d, e, _f] = piece.value
     [a2, b2, _c2, _d2, _e2, f2] = neighbour.value
 
     rotation_ok = (a == -1 && a2 != -1) || (b == -1 && b2 != -1)
     match1 = e == f2 && e != -1
     match2 = c == b2 && c != -1
-    match3 = a == a2 && a != -1
-    valid = rotation_ok && ((match1 && match2) || match3)
+    match3 = d == a2 && d != -1
 
-    IO.puts("bottom ok: #{valid}")
-    valid
+    rotation_ok && ((match1 && match2) || match3)
   end
 
   def validate_move("left", _piece, nil) do
@@ -462,10 +478,8 @@ defmodule TriominosWeb.GameLive do
     match2 = e == d2 && e != -1
     match3 = f == a2 && f != -1
     match4 = d == c2 && d != -1
-    valid = rotation_ok && ((match1 && match2) || (match3 && match4))
 
-    IO.puts("left ok: #{valid}")
-    valid
+    rotation_ok && ((match1 && match2) || (match3 && match4))
   end
 
   def validate_move("right", _piece, nil) do
@@ -481,9 +495,7 @@ defmodule TriominosWeb.GameLive do
     match2 = d == e2 && d != -1
     match3 = a == f2 && a != -1
     match4 = c == d2 && c != -1
-    valid = rotation_ok && ((match1 && match2) || (match3 && match4))
 
-    IO.puts("right ok: #{valid}")
-    valid
+    rotation_ok && ((match1 && match2) || (match3 && match4))
   end
 end

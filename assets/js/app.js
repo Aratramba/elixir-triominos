@@ -114,12 +114,23 @@ Hooks.Dragging = {
       translateX(${x - (PIECE_WIDTH / 2)}px) 
       translateY(${y - (PIECE_HEIGHT / 2)}px) 
       translateZ(0)`
+
+    this.ghost.style.transform = `
+        translateX(${this.ghostX}px) 
+        translateY(${this.ghostY}px) 
+        translateZ(0)`
   },
   get_position() {
     const col = Math.round(this.ghostX / (PIECE_WIDTH / 2))
     const row = Math.round(this.ghostY / PIECE_HEIGHT)
     return { x: col, y: row }
   },
+  get_ghost_position() {
+    const ghostX = roundTo(x, PIECE_WIDTH / 2) - roundTo(boardX, PIECE_WIDTH / 2) - (PIECE_WIDTH / 2)
+    const ghostY = roundTo(y, PIECE_HEIGHT) - roundTo(boardY, PIECE_HEIGHT) - PIECE_HEIGHT
+    return { x: ghostX, y: ghostY }
+  },
+
   mounted() {
     this.id = this.el.firstElementChild.getAttribute('data-id')
     this.ghost = document.querySelector('#ghost')
@@ -132,8 +143,6 @@ Hooks.Dragging = {
     dragger.addEventListener('pointermove', onPieceDrag);
     dragger.addEventListener('pointerup', onPieceDragEnd);
 
-    let time = new Date();
-
     this.el.style.transform = this.ghost.style.transform = `
       translateX(${x - 50}px) 
       translateY(${y - 43}px) 
@@ -141,20 +150,16 @@ Hooks.Dragging = {
 
     function _onPieceDrag(e) {
       e.preventDefault();
+
+      const newGhostPosition = this.get_ghost_position()
+      if (this.ghostX === newGhostPosition.x && this.ghostY === newGhostPosition.y) return;
+
+      this.ghostX = newGhostPosition.x;
+      this.ghostY = newGhostPosition.y;
+
       this.move();
+      this.pushEvent('drag_move', this.get_position())
 
-      this.ghostX = roundTo(x, PIECE_WIDTH / 2) - roundTo(boardX, PIECE_WIDTH / 2) - (PIECE_WIDTH / 2)
-      this.ghostY = roundTo(y, PIECE_HEIGHT) - roundTo(boardY, PIECE_HEIGHT) - PIECE_HEIGHT
-
-      this.ghost.style.transform = `
-        translateX(${this.ghostX}px) 
-        translateY(${this.ghostY}px) 
-        translateZ(0)`
-
-      if (new Date() - time > 300) {
-        time = new Date();
-        this.pushEvent('drag_move', this.get_position())
-      }
     }
 
     function _onPieceDragEnd(e) {
@@ -169,7 +174,7 @@ Hooks.Dragging = {
 
     function _onKeyUp(e) {
       if (e.keyCode === 32) {
-        this.pushEvent('rotate', { piece: this.id })
+        this.pushEvent('rotate', { piece: this.id, reverse: e.shiftKey })
         this.pushEvent('drag_move', this.get_position())
       }
     }
