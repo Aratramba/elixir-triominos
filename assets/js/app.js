@@ -115,6 +115,11 @@ Hooks.Dragging = {
       translateY(${y - (PIECE_HEIGHT / 2)}px) 
       translateZ(0)`
   },
+  get_position() {
+    const col = Math.round(this.ghostX / (PIECE_WIDTH / 2))
+    const row = Math.round(this.ghostY / PIECE_HEIGHT)
+    return { x: col, y: row }
+  },
   mounted() {
     this.id = this.el.firstElementChild.getAttribute('data-id')
     this.ghost = document.querySelector('#ghost')
@@ -127,7 +132,7 @@ Hooks.Dragging = {
     dragger.addEventListener('pointermove', onPieceDrag);
     dragger.addEventListener('pointerup', onPieceDragEnd);
 
-
+    let time = new Date();
 
     this.el.style.transform = this.ghost.style.transform = `
       translateX(${x - 50}px) 
@@ -146,17 +151,17 @@ Hooks.Dragging = {
         translateY(${this.ghostY}px) 
         translateZ(0)`
 
+      if (new Date() - time > 300) {
+        time = new Date();
+        this.pushEvent('drag_move', this.get_position())
+      }
+
     }
 
     function _onPieceDragEnd(e) {
       e.preventDefault();
 
-      const col = Math.round(this.ghostX / (PIECE_WIDTH / 2))
-      const row = Math.round(this.ghostY / PIECE_HEIGHT)
-
-      this.pushEvent('drag_end', { x: col, y: row }, (payload) => {
-        console.log(payload)
-      })
+      this.pushEvent('drag_end', this.get_position())
 
       removeEventListener('keyup', onKeyUp)
       dragger.removeEventListener('pointermove', onPieceDrag);
@@ -166,12 +171,11 @@ Hooks.Dragging = {
     function _onKeyUp(e) {
       if (e.keyCode === 32) {
         this.pushEvent('rotate', { piece: this.id })
+        this.pushEvent('drag_move', this.get_position())
       }
     }
 
-    function _debouncedOnPieceMove() {
-      console.log('debounced')
-    }
+
   },
   updated() {
     this.move();

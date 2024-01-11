@@ -154,7 +154,8 @@ defmodule TriominosWeb.GameLive do
 
     board = [first_piece]
 
-    {:ok, assign(socket, hand: hand, pool: pool, board: board, dragging: nil)}
+    {:ok,
+     assign(socket, hand: hand, pool: pool, board: board, dragging: nil, move_status: :default)}
   end
 
   def render(assigns) do
@@ -174,6 +175,7 @@ defmodule TriominosWeb.GameLive do
             draggable={false}
             show_labels={true}
             rotation={0}
+            move_status={@move_status}
           />
         </div>
       </div>
@@ -197,6 +199,7 @@ defmodule TriominosWeb.GameLive do
               draggable={false}
               show_labels={false}
               rotation={piece.rotation}
+              move_status={false}
             />
           </div>
         <% end %>
@@ -219,6 +222,7 @@ defmodule TriominosWeb.GameLive do
               draggable={true}
               show_labels={true}
               rotation={piece.rotation}
+              move_status={false}
             />
           <% end %>
         </div>
@@ -246,15 +250,12 @@ defmodule TriominosWeb.GameLive do
                 draggable={false}
                 show_labels={true}
                 rotation={0}
+                move_status={false}
               />
             </div>
           <% end %>
 
-          <div
-            :if={@dragging != nil}
-            id="ghost"
-            class="absolute left-0 top-0 transition-transform border"
-          >
+          <div :if={@dragging != nil} id="ghost" class="absolute left-0 top-0 transition-transform">
             <span class="drop-shadow blur absolute top-0 left-0 opacity-20">
               <.shape
                 value={@dragging.value}
@@ -262,6 +263,7 @@ defmodule TriominosWeb.GameLive do
                 draggable={false}
                 show_labels={true}
                 rotation={0}
+                move_status={@move_status}
               />
             </span>
             <span class="absolute top-0 left-0 opacity-20">
@@ -271,6 +273,7 @@ defmodule TriominosWeb.GameLive do
                 draggable={false}
                 show_labels={true}
                 rotation={0}
+                move_status={@move_status}
               />
             </span>
           </div>
@@ -289,8 +292,15 @@ defmodule TriominosWeb.GameLive do
       data-id={@id}
       style={"transform: rotate(#{@rotation}deg) scale(0.95)"}
     >
+      <% image =
+        case @move_status do
+          :valid -> "/images/tile_valid.png"
+          :invalid -> "/images/tile_invalid.png"
+          _ -> "/images/tile_default.png"
+        end %>
+
       <img
-        src="/images/tile3.png"
+        src={image}
         class={"absolute inset-0 #{a == -1 && "rotate-180"} drop-shadow-xl"}
         width="100"
         height="86.6"
@@ -330,14 +340,51 @@ defmodule TriominosWeb.GameLive do
     {:noreply, assign(socket, dragging: piece)}
   end
 
+  def handle_event("drag_move", %{"x" => x, "y" => y}, socket) do
+    piece = socket.assigns.dragging
+    valid = validate(piece, %{"x" => x, "y" => y, "board" => socket.assigns.board})
+
+    if valid do
+      {:noreply, assign(socket, move_status: :valid)}
+    else
+      {:noreply, assign(socket, move_status: :invalid)}
+    end
+  end
+
   def handle_event("drag_end", %{"x" => x, "y" => y}, socket) do
     piece = socket.assigns.dragging
+    valid = validate(piece, %{"x" => x, "y" => y, "board" => socket.assigns.board})
 
-    on_top = Enum.find(socket.assigns.board, fn p -> p.x == x and p.y == y end)
-    top_neighbour = Enum.find(socket.assigns.board, fn p -> p.x == x and p.y == y - 1 end)
-    bottom_neighbour = Enum.find(socket.assigns.board, fn p -> p.x == x and p.y == y + 1 end)
-    left_neighbour = Enum.find(socket.assigns.board, fn p -> p.x == x - 1 and p.y == y end)
-    right_neighbour = Enum.find(socket.assigns.board, fn p -> p.x == x + 1 and p.y == y end)
+    if valid do
+      # remove piece from hand
+      hand = Enum.reject(socket.assigns.hand, fn p -> p.id == piece.id end)
+
+      # determine location later from frontend
+      piece = Piece.set_x(piece, x)
+      piece = Piece.set_y(piece, y)
+
+      # add piece to board
+      board = socket.assigns.board ++ [piece]
+
+      # add new piece to pieces
+      hand = Enum.take_random(socket.assigns.pool, 1) ++ hand
+
+      # remove piece from pool
+      pool = Enum.reject(socket.assigns.pool, fn p -> p in hand end)
+
+      {:noreply,
+       assign(socket, hand: hand, pool: pool, board: board, dragging: nil, move_status: :default)}
+    else
+      {:noreply, assign(socket, dragging: nil, move_status: :default)}
+    end
+  end
+
+  def validate(piece, %{"x" => x, "y" => y, "board" => board}) do
+    on_top = Enum.find(board, fn p -> p.x == x and p.y == y end)
+    top_neighbour = Enum.find(board, fn p -> p.x == x and p.y == y - 1 end)
+    bottom_neighbour = Enum.find(board, fn p -> p.x == x and p.y == y + 1 end)
+    left_neighbour = Enum.find(board, fn p -> p.x == x - 1 and p.y == y end)
+    right_neighbour = Enum.find(board, fn p -> p.x == x + 1 and p.y == y end)
 
     top_valid = validate_move("top", piece, top_neighbour)
     bottom_valid = validate_move("bottom", piece, bottom_neighbour)
@@ -363,26 +410,7 @@ defmodule TriominosWeb.GameLive do
     valid =
       !on_top && has_neighbours && neighbours_valid
 
-    if valid do
-      # remove piece from hand
-      hand = Enum.reject(socket.assigns.hand, fn p -> p.id == piece.id end)
-
-      # determine location later from frontend
-      piece = Piece.set_x(piece, x)
-      piece = Piece.set_y(piece, y)
-
-      # add piece to board
-      board = socket.assigns.board ++ [piece]
-
-      # add new piece to pieces
-      hand = Enum.take_random(socket.assigns.pool, 1) ++ hand
-
-      # remove piece from pool
-      pool = Enum.reject(socket.assigns.pool, fn p -> p in hand end)
-      {:noreply, assign(socket, hand: hand, pool: pool, board: board, dragging: nil)}
-    else
-      {:noreply, assign(socket, dragging: nil)}
-    end
+    valid
   end
 
   def validate_move("top", _piece, nil) do
