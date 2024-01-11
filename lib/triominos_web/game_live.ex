@@ -1,5 +1,5 @@
 defmodule TriominosWeb.Piece do
-  defstruct id: nil, value: nil, x: nil, y: nil
+  defstruct id: nil, value: nil, x: nil, y: nil, rotation: 0
 
   @doc """
   Create a new piece
@@ -33,7 +33,8 @@ defmodule TriominosWeb.Piece do
   def new(id) do
     [a, b, c] = String.split(id, "", trim: true)
     value = [String.to_integer(a), -1, String.to_integer(b), -1, String.to_integer(c), -1]
-    %__MODULE__{id: id, value: value}
+    rotation = Enum.random(-5..5) / 10
+    %__MODULE__{id: id, value: value, rotation: rotation}
   end
 
   @doc """
@@ -70,6 +71,7 @@ defmodule TriominosWeb.GameLive do
 
   alias TriominosWeb.Piece
 
+  # TODO: generate this list
   @pieces [
     Piece.new("000"),
     Piece.new("001"),
@@ -130,20 +132,27 @@ defmodule TriominosWeb.GameLive do
   ]
 
   def mount(_params, _session, socket) do
-    hand = Enum.take_random(@pieces, 5)
+    # a two-player game uses nine pieces per player to start,
+    # three or four players use seven pieces,
+    #  and five or six players use six pieces.
+
+    num_pieces = 9
+
+    # generate hand
+    hand = Enum.take_random(@pieces, num_pieces)
 
     # remove pieces from pool
     pool = Enum.reject(@pieces, fn p -> p in hand end)
 
     # add first piece to board
-
-    # this seems wrong, should be taking pipe |> operations, how does that work?
     board = Enum.take_random(pool, 1)
-    first_piece = Enum.at(board, 0)
-    first_piece = Piece.set_x(first_piece, 25)
-    first_piece = Piece.set_y(first_piece, 17)
+
+    first_piece =
+      Enum.at(board, 0)
+      |> Piece.set_x(55)
+      |> Piece.set_y(30)
+
     board = [first_piece]
-    IO.inspect(board)
 
     {:ok, assign(socket, hand: hand, pool: pool, board: board, dragging: nil)}
   end
@@ -159,55 +168,111 @@ defmodule TriominosWeb.GameLive do
           phx-value-piece={@dragging.id}
           class="absolute left-0 top-0"
         >
-          <.shape value={@dragging.value} id={@dragging.id} draggable={false} />
+          <.shape
+            value={@dragging.value}
+            id={@dragging.id}
+            draggable={false}
+            show_labels={true}
+            rotation={0}
+          />
         </div>
       </div>
 
-      <%!-- topbar --%>
-      <div class="absolute inset-x-0 top-0 h-16 border z-40 bg-darkgray"></div>
-
       <%!-- pool --%>
-      <div class="absolute w-[50vh] h-[50vh] top-0 right-0 hover:h-[75vh] hover:w-[75vh] transition-all border rounded-full translate-x-1/2 -translate-y-1/2 flex items-end xoverflow-scroll z-50">
+      <div class="absolute w-[50vh] h-[50vh] top-0 right-0 hover:h-[75vh] hover:w-[75vh] transition-all rounded-full translate-x-1/2 -translate-y-1/2 flex items-end z-50">
+        <div class="absolute inset-0 bg-[url('/images/bg-main.jpg')] blur-3xl bg-top opacity-80" />
         <%= for piece <- @pool do %>
-          <% randomX = Enum.random(0..75)
-          randomY = Enum.random(0..75)
+          <% randomX = Enum.random(0..55)
+          randomY = Enum.random(0..55)
           randomR = Enum.random(0..360) %>
 
           <div
             class="piece absolute"
-            style={"transform: rotate(#{randomR}deg); top: #{randomY}%; left: #{randomX}%"}
+            style={"transform: rotate(#{randomR}deg); bottom: #{randomY}%; left: #{randomX}%"}
             phx-click="refill"
           >
-            <.shape value={piece.value} id={piece.id} draggable={false} />
+            <.shape
+              value={piece.value}
+              id={piece.id}
+              draggable={false}
+              show_labels={false}
+              rotation={piece.rotation}
+            />
           </div>
         <% end %>
       </div>
 
+      <%!-- topbar --%>
+      <div class="absolute inset-x-0 top-0 h-[63px] z-50 bg-[url('/images/bg-top.png')]"></div>
+
       <%!-- hand --%>
-      <div class="absolute inset-x-0 bottom-0 h-24 z-30 bg-darkblue">
-        <div class="flex gap-4 flex-nowrap overflow-scroll" id="hand" phx-hook="Hand">
+      <div class="absolute inset-x-0 bottom-0 z-30 bg-darkblue drop-shadow-[0_-35px_35px_rgba(0,0,0,0.25)]">
+        <div
+          class="flex gap-4 justify-center items-center flex-nowrap h-[120px] overflow-scroll"
+          id="hand"
+          phx-hook="Hand"
+        >
           <%= for piece <- @hand do %>
-            <.shape value={piece.value} id={piece.id} draggable={true} />
+            <.shape
+              value={piece.value}
+              id={piece.id}
+              draggable={true}
+              show_labels={true}
+              rotation={piece.rotation}
+            />
           <% end %>
         </div>
       </div>
 
       <%!-- board --%>
-      <div class="absolute inset-0 z-10 bg-blue overflow-hidden">
-        <div id="board" phx-hook="Board" class="w-[2000px] h-[2000px] transform-gpu">
+      <div class="absolute inset-0 z-10 overflow-hidden">
+        <div
+          id="board"
+          phx-hook="Board"
+          class="w-[10000px] h-[10000px] transform-gpu
+          bg-repeat
+          bg-[url('/images/linen.gif')]"
+        >
           <%= for piece <- @board do %>
             <div
-              class="piece absolute left-0 top-0"
+              class="piece absolute left-0 top-0 origin-center"
               style={"transform:
                 translateX(calc(#{piece.x}*var(--piece-width)/2))
                 translateY(calc(#{piece.y}*var(--piece-height)))"}
             >
-              <.shape value={piece.value} id={piece.id} draggable={false} />
+              <.shape
+                value={piece.value}
+                id={piece.id}
+                draggable={false}
+                show_labels={true}
+                rotation={0}
+              />
             </div>
           <% end %>
 
-          <div :if={@dragging != nil} id="ghost" class="absolute left-0 top-0 opacity-50">
-            <.shape value={@dragging.value} id={@dragging.id} draggable={false} />
+          <div
+            :if={@dragging != nil}
+            id="ghost"
+            class="absolute left-0 top-0 transition-transform border"
+          >
+            <span class="drop-shadow blur absolute top-0 left-0 opacity-20">
+              <.shape
+                value={@dragging.value}
+                id={@dragging.id}
+                draggable={false}
+                show_labels={true}
+                rotation={0}
+              />
+            </span>
+            <span class="absolute top-0 left-0 opacity-20">
+              <.shape
+                value={@dragging.value}
+                id={@dragging.id}
+                draggable={false}
+                show_labels={true}
+                rotation={0}
+              />
+            </span>
           </div>
         </div>
       </div>
@@ -219,24 +284,26 @@ defmodule TriominosWeb.GameLive do
     ~H"""
     <% [a, b, c, d, e, f] = @value %>
     <div
-      class="select-none shrink-0 block relative w-[100px] h-[86.6px]"
+      class="select-none shrink-0 block relative w-[100px] h-[86.6px] origin-center"
       data-draggable={@draggable == true}
       data-id={@id}
+      style={"transform: rotate(#{@rotation}deg) scale(0.95)"}
     >
       <img
-        src="/images/tile2.png"
+        src="/images/tile3.png"
         class={"absolute inset-0 #{a == -1 && "rotate-180"} drop-shadow-xl"}
         width="100"
         height="86.6"
         alt=""
       />
-
-      <.number :if={a > -1} value={a} class="absolute -translate-x-1/2 left-1/2 top-2.5" />
-      <.number :if={b > -1} value={b} class="absolute -translate-x-full right-0 top-1" />
-      <.number :if={c > -1} value={c} class="absolute -translate-x-full right-0 bottom-1" />
-      <.number :if={d > -1} value={d} class="absolute -translate-x-1/2 left-1/2 bottom-2.5" />
-      <.number :if={e > -1} value={e} class="absolute translate-x-full left-0 bottom-1" />
-      <.number :if={f > -1} value={f} class="absolute translate-x-full left-0 top-1" />
+      <%= if @show_labels != false do %>
+        <.number :if={a > -1} value={a} class="absolute -translate-x-1/2 left-1/2 top-2.5" />
+        <.number :if={b > -1} value={b} class="absolute -translate-x-full right-0 top-1" />
+        <.number :if={c > -1} value={c} class="absolute -translate-x-full right-0 bottom-1" />
+        <.number :if={d > -1} value={d} class="absolute -translate-x-1/2 left-1/2 bottom-2.5" />
+        <.number :if={e > -1} value={e} class="absolute translate-x-full left-0 bottom-1" />
+        <.number :if={f > -1} value={f} class="absolute translate-x-full left-0 top-1" />
+      <% end %>
     </div>
     """
   end
@@ -266,7 +333,6 @@ defmodule TriominosWeb.GameLive do
   def handle_event("drag_end", %{"x" => x, "y" => y}, socket) do
     piece = socket.assigns.dragging
 
-    # check if piece on top of another
     on_top = Enum.find(socket.assigns.board, fn p -> p.x == x and p.y == y end)
     top_neighbour = Enum.find(socket.assigns.board, fn p -> p.x == x and p.y == y - 1 end)
     bottom_neighbour = Enum.find(socket.assigns.board, fn p -> p.x == x and p.y == y + 1 end)
