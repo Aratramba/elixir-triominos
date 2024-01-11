@@ -22,6 +22,8 @@ import { Socket } from "phoenix"
 import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
+
+
 let Hooks = {}
 
 const dragger = document.getElementById('dragger')
@@ -29,8 +31,8 @@ dragger.addEventListener('pointermove', onMouseMove.bind(this), false);
 
 let x;
 let y;
-let boardX = -520
-let boardY = -1000
+let boardX = -2000
+let boardY = -2000
 
 const PIECE_HEIGHT = 86.6;
 const PIECE_WIDTH = 100;
@@ -125,6 +127,8 @@ Hooks.Dragging = {
     dragger.addEventListener('pointermove', onPieceDrag);
     dragger.addEventListener('pointerup', onPieceDragEnd);
 
+
+
     this.el.style.transform = this.ghost.style.transform = `
       translateX(${x - 50}px) 
       translateY(${y - 43}px) 
@@ -137,12 +141,11 @@ Hooks.Dragging = {
       this.ghostX = roundTo(x, PIECE_WIDTH / 2) - roundTo(boardX, PIECE_WIDTH / 2) - (PIECE_WIDTH / 2)
       this.ghostY = roundTo(y, PIECE_HEIGHT) - roundTo(boardY, PIECE_HEIGHT) - PIECE_HEIGHT
 
-      console.log(boardX, boardY)
-
       this.ghost.style.transform = `
         translateX(${this.ghostX}px) 
         translateY(${this.ghostY}px) 
         translateZ(0)`
+
     }
 
     function _onPieceDragEnd(e) {
@@ -151,7 +154,10 @@ Hooks.Dragging = {
       const col = Math.round(this.ghostX / (PIECE_WIDTH / 2))
       const row = Math.round(this.ghostY / PIECE_HEIGHT)
 
-      this.pushEvent('drag_end', { x: col, y: row })
+      this.pushEvent('drag_end', { x: col, y: row }, (payload) => {
+        console.log(payload)
+      })
+
       removeEventListener('keyup', onKeyUp)
       dragger.removeEventListener('pointermove', onPieceDrag);
       dragger.removeEventListener('pointerup', onPieceDragEnd);
@@ -161,6 +167,10 @@ Hooks.Dragging = {
       if (e.keyCode === 32) {
         this.pushEvent('rotate', { piece: this.id })
       }
+    }
+
+    function _debouncedOnPieceMove() {
+      console.log('debounced')
     }
   },
   updated() {
