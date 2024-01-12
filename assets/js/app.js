@@ -86,6 +86,11 @@ Hooks.Board = {
       boardX += this.dragX - prevX;
       boardY += this.dragY - prevY;
 
+      if (boardX > 0) boardX = 0;
+      if (boardY > 0) boardY = 0;
+      if (boardX < -4000) boardX = -4000;
+      if (boardY < -4000) boardY = -4000;
+
       this.move();
     }
 
