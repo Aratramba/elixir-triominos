@@ -42,6 +42,10 @@ defmodule TriominosWeb.Piece do
   by moving the last value to the front
   """
 
+  def rotate(item) do
+    rotate(item, :cw)
+  end
+
   def rotate(item, :cw) do
     [a, b, c, d, e, f] = item.value
     new_value = [f, a, b, c, d, e]
@@ -58,14 +62,6 @@ defmodule TriominosWeb.Piece do
     new_value = [b, c, d, e, f, a]
     %__MODULE__{item | value: new_value}
   end
-
-  def get_value(%__MODULE__{value: value}), do: value
-
-  def get_id(%__MODULE__{id: id}), do: id
-
-  def get_x(%__MODULE__{x: x}), do: x
-
-  def get_y(%__MODULE__{y: y}), do: y
 
   def set_x(%__MODULE__{} = piece, x) do
     %__MODULE__{piece | x: x}
@@ -169,13 +165,19 @@ defmodule TriominosWeb.GameLive do
 
     board = [first_piece]
 
+    if connected?(socket) do
+      :timer.send_interval(1000, self(), :tick)
+    end
+
     {:ok,
      assign(socket,
        hand: hand,
        pool: pool,
        board: board,
        dragging: nil,
-       move_status: :default
+       move_status: :default,
+       start: Time.utc_now(),
+       timer: 0
      )}
   end
 
@@ -231,7 +233,9 @@ defmodule TriominosWeb.GameLive do
       </div>
 
       <%!-- topbar --%>
-      <div class="absolute inset-x-0 top-0 h-[63px] z-50 bg-[url('/images/bg-top.png')]"></div>
+      <div class="absolute inset-x-0 top-0 h-[63px] z-50 bg-[url('/images/bg-top.png')] text-white flex gap-10">
+        <span class="ml-auto text-sm mt-4 mr-4"><%= @timer %></span>
+      </div>
 
       <%!-- hand --%>
       <div class="absolute inset-x-0 bottom-0 z-30 bg-darkblue drop-shadow-[0_-35px_35px_rgba(0,0,0,0.25)]">
@@ -508,5 +512,17 @@ defmodule TriominosWeb.GameLive do
     match4 = c == d2 && c != -1
 
     rotation_ok && ((match1 && match2) || (match3 && match4))
+  end
+
+  def handle_info(:tick, socket) do
+    diff = Time.diff(Time.utc_now(), socket.assigns.start, :second)
+
+    timer =
+      cond do
+        diff > 60 -> "#{div(diff, 60)}:#{rem(diff, 60)}"
+        true -> "#{diff}"
+      end
+
+    {:noreply, assign(socket, timer: timer)}
   end
 end
