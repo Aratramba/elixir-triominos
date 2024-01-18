@@ -42,7 +42,7 @@ defmodule TriominosWeb.Piece do
   by moving the last value to the front
   """
 
-  def rotateCW(item) do
+  def rotate(item, :cw) do
     [a, b, c, d, e, f] = item.value
     new_value = [f, a, b, c, d, e]
     %__MODULE__{item | value: new_value}
@@ -53,7 +53,7 @@ defmodule TriominosWeb.Piece do
   by moving the first value to the back
   """
 
-  def rotateCCW(item) do
+  def rotate(item, :ccw) do
     [a, b, c, d, e, f] = item.value
     new_value = [b, c, d, e, f, a]
     %__MODULE__{item | value: new_value}
@@ -79,6 +79,8 @@ end
 defmodule TriominosWeb.GameLive do
   use Phoenix.LiveView
   use Phoenix.Component
+
+  require Logger
 
   alias TriominosWeb.Piece
 
@@ -142,7 +144,9 @@ defmodule TriominosWeb.GameLive do
     Piece.new("555")
   ]
 
-  def mount(_params, _session, socket) do
+  def mount(%{"id" => id}, _session, socket) do
+    Logger.info(id)
+
     # a two-player game uses nine pieces per player to start,
     # three or four players use seven pieces,
     #  and five or six players use six pieces.
@@ -194,7 +198,9 @@ defmodule TriominosWeb.GameLive do
             rotation={0}
             move_status={@move_status}
           /> --%>
-          <!--<span :if={@move_status}><%= @move_status %></span>-->
+          <span :if={@move_status} class="bg-white/60 rounded-md px-1.5 py-0.5 text-xs">
+            <%= @move_status %>
+          </span>
           <span />
         </div>
       </div>
@@ -350,8 +356,8 @@ defmodule TriominosWeb.GameLive do
   def handle_event("rotate", %{"piece" => _id, "reverse" => reverse}, socket) do
     dragging =
       if !reverse,
-        do: Piece.rotateCW(socket.assigns.dragging),
-        else: Piece.rotateCCW(socket.assigns.dragging)
+        do: Piece.rotate(socket.assigns.dragging, :cw),
+        else: Piece.rotate(socket.assigns.dragging, :ccw)
 
     {:noreply, assign(socket, dragging: dragging)}
   end
@@ -401,6 +407,8 @@ defmodule TriominosWeb.GameLive do
   end
 
   def validate(piece, %{"x" => x, "y" => y, "board" => board}) do
+    pointing_up = Enum.at(piece.value, 0) == -1
+
     on_top = Enum.find(board, fn p -> p.x == x and p.y == y end)
     top_neighbour = Enum.find(board, fn p -> p.x == x and p.y == y - 1 end)
     bottom_neighbour = Enum.find(board, fn p -> p.x == x and p.y == y + 1 end)
@@ -414,15 +422,18 @@ defmodule TriominosWeb.GameLive do
 
     has_neighbours = top_neighbour || bottom_neighbour || left_neighbour || right_neighbour
 
-    # special case: has bottom neighbour, but no side or top neighbours
     has_only_bottom_neighbour =
-      bottom_neighbour && !top_neighbour && !left_neighbour && !right_neighbour
+      bottom_neighbour && pointing_up && !top_neighbour && !left_neighbour && !right_neighbour
+
+    has_only_top_neighbour =
+      top_neighbour && !pointing_up && !bottom_neighbour && !left_neighbour && !right_neighbour
 
     neighbours_valid = top_valid && bottom_valid && left_valid && right_valid
 
     cond do
-      on_top != nil -> {:on_top}
+      on_top -> {:on_top}
       has_only_bottom_neighbour -> {:invalid_bottom}
+      has_only_top_neighbour -> {:invalid_top}
       !has_neighbours -> {:no_neighbours}
       !top_valid -> {:invalid_top}
       !bottom_valid -> {:invalid_bottom}

@@ -25,8 +25,7 @@ import topbar from "../vendor/topbar"
 
 
 let Hooks = {}
-
-const dragger = document.getElementById('dragger')
+const dragger = document.getElementById('dragger') || document.body
 dragger.addEventListener('pointermove', onMouseMove.bind(this), false);
 
 let x;
