@@ -89,7 +89,7 @@ defmodule TriominosWeb.GameLive do
 
     first_piece =
       Enum.at(board, 0)
-      |> Piece.set_x(55)
+      |> Piece.set_x(30)
       |> Piece.set_y(30)
 
     board = [first_piece]

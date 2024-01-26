@@ -30,11 +30,15 @@ dragger.addEventListener('pointermove', onMouseMove.bind(this), false);
 
 let x;
 let y;
-let boardX = -2000
-let boardY = -2000
 
 const PIECE_HEIGHT = 86;
 const PIECE_WIDTH = 100;
+
+let INIT_GRID_X = 30
+let INIT_GRID_Y = 30
+
+let boardX = -(INIT_GRID_X * PIECE_WIDTH / 2) + (window.innerWidth / 2)
+let boardY = -INIT_GRID_Y * PIECE_HEIGHT + (window.innerHeight / 2)
 
 document.body.style.setProperty('--piece-height', `${PIECE_HEIGHT}px`);
 document.body.style.setProperty('--piece-width', `${PIECE_WIDTH}px`);
