@@ -1,0 +1,43 @@
+<%!-- board --%>
+<div class="absolute inset-0 z-10 overflow-hidden">
+  <div
+    id="board"
+    phx-hook="Board"
+    class="w-[10000px] h-[10000px] transform-gpu
+          bg-repeat
+          bg-[url('/images/linen.gif')]"
+  >
+    <%= for piece <- @board do %>
+      <div
+        class="piece absolute left-0 top-0 origin-center"
+        style={"transform:
+                translateX(calc(#{piece.x}*var(--piece-width)/2))
+                translateY(calc(#{piece.y}*var(--piece-height)))"}
+      >
+        <.shape
+          value={piece.value}
+          id={piece.id}
+          draggable={false}
+          show_labels={true}
+          rotation={0}
+          move_status={false}
+        />
+      </div>
+    <% end %>
+
+    <div :if={@dragging != nil} id="ghost" class="absolute left-0 top-0 transition-transform">
+      <div class={if @move_status == :no_neighbours, do: "opacity-40", else: "opacity-100"}>
+        <span class="absolute top-0 left-0">
+          <.shape
+            value={@dragging.value}
+            id={@dragging.id}
+            draggable={false}
+            show_labels={true}
+            rotation={0}
+            move_status={@move_status}
+          />
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

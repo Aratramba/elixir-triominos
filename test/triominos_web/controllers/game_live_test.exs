@@ -1,5 +1,7 @@
-defmodule TriominosWeb.GameLiveTest do
+defmodule BoardTest do
   alias TriominosWeb.Piece
+  alias TriominosWeb.Board
+
   use TriominosWeb.ConnCase
 
   # test "GET /", %{conn: conn} do
@@ -44,15 +46,15 @@ defmodule TriominosWeb.GameLiveTest do
     piece = Piece.new("022")
 
     # no neighbours
-    assert TriominosWeb.GameLive.validate(piece, %{"x" => 12, "y" => 12, "board" => board}) ==
+    assert Board.validate(piece, %{"x" => 12, "y" => 12, "board" => board}) ==
              {:no_neighbours}
 
     # on top
-    assert TriominosWeb.GameLive.validate(piece, %{"x" => 10, "y" => 10, "board" => board}) ==
+    assert Board.validate(piece, %{"x" => 10, "y" => 10, "board" => board}) ==
              {:on_top}
 
     # on top rotated
-    assert TriominosWeb.GameLive.validate(piece |> Piece.rotate(), %{
+    assert Board.validate(piece |> Piece.rotate(), %{
              "x" => 10,
              "y" => 10,
              "board" => board
@@ -60,7 +62,7 @@ defmodule TriominosWeb.GameLiveTest do
              {:on_top}
 
     # below not rotated
-    assert TriominosWeb.GameLive.validate(piece, %{
+    assert Board.validate(piece, %{
              "x" => 10,
              "y" => 11,
              "board" => board
@@ -68,7 +70,7 @@ defmodule TriominosWeb.GameLiveTest do
              {:invalid_top}
 
     # below once rotated
-    assert TriominosWeb.GameLive.validate(piece |> Piece.rotate(), %{
+    assert Board.validate(piece |> Piece.rotate(), %{
              "x" => 10,
              "y" => 11,
              "board" => board
@@ -76,7 +78,7 @@ defmodule TriominosWeb.GameLiveTest do
              {:valid}
 
     # above not rotated
-    assert TriominosWeb.GameLive.validate(piece, %{
+    assert Board.validate(piece, %{
              "x" => 10,
              "y" => 9,
              "board" => board
@@ -84,7 +86,7 @@ defmodule TriominosWeb.GameLiveTest do
              {:invalid_bottom}
 
     # above once rotated
-    assert TriominosWeb.GameLive.validate(piece |> Piece.rotate(), %{
+    assert Board.validate(piece |> Piece.rotate(), %{
              "x" => 10,
              "y" => 9,
              "board" => board
@@ -92,7 +94,7 @@ defmodule TriominosWeb.GameLiveTest do
              {:invalid_bottom}
 
     # right not rotated
-    assert TriominosWeb.GameLive.validate(piece, %{
+    assert Board.validate(piece, %{
              "x" => 11,
              "y" => 10,
              "board" => board
@@ -100,7 +102,7 @@ defmodule TriominosWeb.GameLiveTest do
              {:invalid_left}
 
     # right once rotated
-    assert TriominosWeb.GameLive.validate(piece |> Piece.rotate(), %{
+    assert Board.validate(piece |> Piece.rotate(), %{
              "x" => 11,
              "y" => 10,
              "board" => board
@@ -108,7 +110,7 @@ defmodule TriominosWeb.GameLiveTest do
              {:invalid_left}
 
     # left not rotated
-    assert TriominosWeb.GameLive.validate(piece, %{
+    assert Board.validate(piece, %{
              "x" => 9,
              "y" => 10,
              "board" => board
@@ -116,7 +118,7 @@ defmodule TriominosWeb.GameLiveTest do
              {:invalid_right}
 
     # left once rotated
-    assert TriominosWeb.GameLive.validate(piece |> Piece.rotate(), %{
+    assert Board.validate(piece |> Piece.rotate(), %{
              "x" => 9,
              "y" => 10,
              "board" => board

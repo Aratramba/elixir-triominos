@@ -1,0 +1,18 @@
+<div class="absolute inset-x-0 bottom-0 z-30 bg-darkblue drop-shadow-[0_-35px_35px_rgba(0,0,0,0.25)]">
+  <div
+    class="flex gap-4 justify-center items-center flex-nowrap h-[120px] overflow-scroll"
+    id="hand"
+    phx-hook="Hand"
+  >
+    <%= for piece <- @hand do %>
+      <.shape
+        value={piece.value}
+        id={piece.id}
+        draggable={true}
+        show_labels={true}
+        rotation={piece.rotation}
+        move_status={false}
+      />
+    <% end %>
+  </div>
+</div>

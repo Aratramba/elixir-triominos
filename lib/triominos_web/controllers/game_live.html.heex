@@ -1,0 +1,21 @@
+<div class="grid grid-cols-5 h-screen overflow-hidden relative select-none">
+  <div id="dragger" class="absolute inset-0 z-50">
+    <div
+      :if={@dragging != nil}
+      id="dragging"
+      phx-hook="Dragging"
+      phx-value-piece={@dragging.id}
+      class="absolute left-0 top-0"
+    >
+      <span :if={@move_status} class="bg-white/60 rounded-md px-1.5 py-0.5 text-xs">
+        <%= @move_status %>
+      </span>
+      <span />
+    </div>
+  </div>
+
+  <.pool pool={@pool} />
+  <.topbar timer={@timer} />
+  <.hand hand={@hand} />
+  <.board board={@board} dragging={@dragging} move_status={@move_status} />
+</div>

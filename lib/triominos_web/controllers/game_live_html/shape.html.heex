@@ -1,0 +1,45 @@
+<% [a, b, c, d, e, f] = @value %>
+<div
+  class="select-none shrink-0 block relative w-[100px] h-[86px] origin-[50px_43px]"
+  data-draggable={@draggable == true}
+  data-id={@id}
+  style={"transform: rotate(#{@rotation}deg) scale(0.95)"}
+>
+  <% image =
+    case @move_status do
+      :valid -> "/images/tile_valid.png"
+      :no_neighbours -> "/images/tile_dragging.png"
+      :on_top -> "/images/tile_invalid.png"
+      :invalid_top -> "/images/tile_invalid.png"
+      :invalid_bottom -> "/images/tile_invalid.png"
+      :invalid_left -> "/images/tile_invalid.png"
+      :invalid_right -> "/images/tile_invalid.png"
+      :invalid_neighbours -> "/images/tile_invalid.png"
+      _ -> "/images/tile_default.png"
+    end %>
+
+  <img
+    src={image}
+    class={"absolute inset-0 #{a == -1 && "rotate-180"} drop-shadow-xl"}
+    width="100"
+    height="86"
+    alt=""
+  />
+  <%= if @show_labels != false do %>
+    <%!-- <span class="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 bg-white rounded-md px-1 whitespace-nowrap text-xs">
+      <%= Enum.map(@value, fn x ->
+        case x do
+          -1 -> "."
+          _ -> x
+        end
+      end)
+      |> Enum.join("") %>
+    </span> --%>
+    <.number :if={a > -1} value={a} class="absolute -translate-x-1/2 left-1/2 top-2.5" />
+    <.number :if={b > -1} value={b} class="absolute -translate-x-full right-0 top-1" />
+    <.number :if={c > -1} value={c} class="absolute -translate-x-full right-0 bottom-1" />
+    <.number :if={d > -1} value={d} class="absolute -translate-x-1/2 left-1/2 bottom-2.5" />
+    <.number :if={e > -1} value={e} class="absolute translate-x-full left-0 bottom-1" />
+    <.number :if={f > -1} value={f} class="absolute translate-x-full left-0 top-1" />
+  <% end %>
+</div>

@@ -1,0 +1,23 @@
+<div class="absolute w-[50vh] h-[50vh] top-0 right-0 hover:h-[75vh] hover:w-[75vh] transition-all rounded-full translate-x-1/2 -translate-y-1/2 flex items-end z-50">
+  <div class="absolute inset-0 bg-[url('/images/bg-main.jpg')] blur-3xl bg-top opacity-80" />
+  <%= for piece <- @pool do %>
+    <% randomX = Enum.random(0..55)
+    randomY = Enum.random(0..55)
+    randomR = Enum.random(0..360) %>
+
+    <div
+      class="piece absolute"
+      style={"transform: rotate(#{randomR}deg); bottom: #{randomY}%; left: #{randomX}%"}
+      phx-click="refill"
+    >
+      <.shape
+        value={piece.value}
+        id={piece.id}
+        draggable={false}
+        show_labels={false}
+        rotation={piece.rotation}
+        move_status={false}
+      />
+    </div>
+  <% end %>
+</div>
