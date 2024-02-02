@@ -13,6 +13,8 @@ defmodule TriominosWeb.Board do
     left_valid = validate_move("left", piece, left_neighbour)
     right_valid = validate_move("right", piece, right_neighbour)
 
+    is_bridge = test_bridge(piece, board)
+
     has_neighbours = top_neighbour || bottom_neighbour || left_neighbour || right_neighbour
 
     has_only_bottom_neighbour =
@@ -101,5 +103,18 @@ defmodule TriominosWeb.Board do
     match4 = c == d2 && c != -1
 
     rotation_ok && ((match1 && match2) || (match3 && match4))
+  end
+
+  def test_bridge(piece, board) do
+    [a, b, c, d, e, f] = piece.value
+
+    # top bridge = no top neighbour, top left matches, top right matches
+    # bottom bridge = no bottom neighbour, bottom left matches, bottom right matches
+    # left bridge = no left neighbour, x-2_y+0 matches, x-1_y+1 matches
+    # right bridge = no right neighbour, x+2_y+0 matches, x+1_y+0 matches
+
+    # TODO: figure out all these for the rotated version as well
+
+    {:ok}
   end
 end
