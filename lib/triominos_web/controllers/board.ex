@@ -27,6 +27,7 @@ defmodule TriominosWeb.Board do
 
     cond do
       on_top -> {:on_top}
+      is_bridge -> {:valid}
       has_only_bottom_neighbour -> {:invalid_bottom}
       has_only_top_neighbour -> {:invalid_top}
       !has_neighbours -> {:no_neighbours}
@@ -112,9 +113,8 @@ defmodule TriominosWeb.Board do
     # bottom bridge = no bottom neighbour, bottom left matches, bottom right matches
     # left bridge = no left neighbour, x-2_y+0 matches, x-1_y+1 matches
     # right bridge = no right neighbour, x+2_y+0 matches, x+1_y+0 matches
-
     # TODO: figure out all these for the rotated version as well
 
-    {:ok}
+    false
   end
 end

@@ -16,12 +16,6 @@ defmodule TriominosWeb.Router do
 
   scope "/", TriominosWeb do
     pipe_through :browser
-
-    # get "/", PageController, :home
-    # get "/game", GameController, :index
-    # get "/game/:game", GameController, :game
-
-    # live "/game_live", GameLive
     live "/", HomepageLive, :index
     live "/:id", GameLive, :index
   end
