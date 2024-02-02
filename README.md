@@ -16,3 +16,15 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
   * Docs: https://hexdocs.pm/phoenix
   * Forum: https://elixirforum.com/c/phoenix-forum
   * Source: https://github.com/phoenixframework/phoenix
+
+## TODO
+- [x] highlight valid on mouse move
+- [x] canvas bounds
+- [x] initial center
+- allow bridges
+- scoring system
+- drag from pool
+- multiple rooms
+- multiplayer
+- use docker
+- change piece label system to abcr?
