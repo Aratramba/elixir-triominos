@@ -37,8 +37,8 @@ const PIECE_WIDTH = 100;
 let INIT_GRID_X = 30
 let INIT_GRID_Y = 30
 
-let boardX = -(INIT_GRID_X * PIECE_WIDTH / 2) + (window.innerWidth / 2)
-let boardY = -INIT_GRID_Y * PIECE_HEIGHT + (window.innerHeight / 2)
+let boardX = -(INIT_GRID_X * PIECE_WIDTH / 2) + (window.innerWidth / 2) - (PIECE_WIDTH / 2)
+let boardY = -INIT_GRID_Y * PIECE_HEIGHT + (window.innerHeight / 2) - (PIECE_HEIGHT / 2)
 
 document.body.style.setProperty('--piece-height', `${PIECE_HEIGHT}px`);
 document.body.style.setProperty('--piece-width', `${PIECE_WIDTH}px`);
