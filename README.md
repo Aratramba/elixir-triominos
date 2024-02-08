@@ -29,6 +29,7 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 - multiplayer
 - use docker
 - change piece label system to abcr?
+- start game with multiple pieces
 
 ## ASDF & Docker
 
